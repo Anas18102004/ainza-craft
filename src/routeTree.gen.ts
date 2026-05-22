@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ProductsRouteImport } from './routes/products'
+import { Route as AiSystemsRouteImport } from './routes/ai-systems'
 import { Route as IndexRouteImport } from './routes/index'
 
 const ServicesRoute = ServicesRouteImport.update({
@@ -23,6 +24,11 @@ const ProductsRoute = ProductsRouteImport.update({
   path: '/products',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AiSystemsRoute = AiSystemsRouteImport.update({
+  id: '/ai-systems',
+  path: '/ai-systems',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -31,30 +37,34 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/ai-systems': typeof AiSystemsRoute
   '/products': typeof ProductsRoute
   '/services': typeof ServicesRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/ai-systems': typeof AiSystemsRoute
   '/products': typeof ProductsRoute
   '/services': typeof ServicesRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/ai-systems': typeof AiSystemsRoute
   '/products': typeof ProductsRoute
   '/services': typeof ServicesRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/products' | '/services'
+  fullPaths: '/' | '/ai-systems' | '/products' | '/services'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/products' | '/services'
-  id: '__root__' | '/' | '/products' | '/services'
+  to: '/' | '/ai-systems' | '/products' | '/services'
+  id: '__root__' | '/' | '/ai-systems' | '/products' | '/services'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AiSystemsRoute: typeof AiSystemsRoute
   ProductsRoute: typeof ProductsRoute
   ServicesRoute: typeof ServicesRoute
 }
@@ -75,6 +85,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProductsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/ai-systems': {
+      id: '/ai-systems'
+      path: '/ai-systems'
+      fullPath: '/ai-systems'
+      preLoaderRoute: typeof AiSystemsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AiSystemsRoute: AiSystemsRoute,
   ProductsRoute: ProductsRoute,
   ServicesRoute: ServicesRoute,
 }
