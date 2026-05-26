@@ -5,13 +5,16 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { nitro } from "nitro/vite";
 
-// Firebase App Hosting runs the app through a Node server wrapper, so it does not
-// need the Cloudflare Vite adapter that powers the existing worker build.
+// Firebase runs through a Node wrapper, and Vercel runs through Nitro functions.
+// Neither target needs the Cloudflare adapter that powers the worker build.
 const isFirebaseBuild = process.env.AINZA_DEPLOY_TARGET === "firebase";
+const isVercelBuild = process.env.AINZA_DEPLOY_TARGET === "vercel";
 
 export default defineConfig({
-  cloudflare: isFirebaseBuild ? false : undefined,
+  cloudflare: isFirebaseBuild || isVercelBuild ? false : undefined,
+  plugins: isVercelBuild ? [nitro()] : [],
   tanstackStart: {
     server: { entry: "server" },
   },

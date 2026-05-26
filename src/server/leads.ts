@@ -1,4 +1,4 @@
-import { getApps, initializeApp } from "firebase-admin/app";
+import { cert, getApps, initializeApp } from "firebase-admin/app";
 import { FieldValue, getFirestore } from "firebase-admin/firestore";
 
 import type { LeadInput } from "@/lib/leads";
@@ -10,7 +10,20 @@ function ensureFirebaseAdmin() {
       process.env.GCLOUD_PROJECT ??
       process.env.GOOGLE_CLOUD_PROJECT;
 
-    initializeApp(projectId ? { projectId } : undefined);
+    const serviceAccountJson =
+      process.env.FIREBASE_SERVICE_ACCOUNT_JSON ??
+      (process.env.FIREBASE_SERVICE_ACCOUNT_BASE64
+        ? Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT_BASE64, "base64").toString("utf8")
+        : undefined);
+
+    if (serviceAccountJson) {
+      initializeApp({
+        credential: cert(JSON.parse(serviceAccountJson)),
+        projectId,
+      });
+    } else {
+      initializeApp(projectId ? { projectId } : undefined);
+    }
   }
 
   return getFirestore();
