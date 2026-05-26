@@ -11,7 +11,7 @@ const items = [
 export function TrustStrip() {
   return (
     <section className="relative -mt-10 pb-10 md:pb-16">
-      <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
+      <div className="mx-auto max-w-[1180px] px-4">
         <Reveal>
           <div className="relative overflow-hidden rounded-2xl glass-strong light-sweep">
             <ul className="relative z-10 grid grid-cols-2 divide-white/5 md:grid-cols-4 md:divide-x">

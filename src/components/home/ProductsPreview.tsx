@@ -29,7 +29,7 @@ export function ProductsPreview() {
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/15 to-transparent" />
       </div>
 
-      <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
+      <div className="mx-auto max-w-[1180px] px-4">
         <Reveal>
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div>
@@ -38,9 +38,9 @@ export function ProductsPreview() {
                 Solutions built around real business outcomes.
               </h2>
               <p className="mt-4 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-                AINZA builds practical software, automation systems, and premium
-                digital platforms that help businesses save time, improve operations,
-                and present themselves with confidence.
+                AINZA builds practical software, automation systems, and premium digital platforms
+                that help businesses save time, improve operations, and present themselves with
+                confidence.
               </p>
             </div>
             <Link
@@ -48,7 +48,10 @@ export function ProductsPreview() {
               className="group hidden items-center gap-2 self-start rounded-full border border-white/15 px-4 py-2.5 text-sm font-medium text-foreground hover:bg-white/5 md:inline-flex"
             >
               Explore Products
-              <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+              <ArrowUpRight
+                size={16}
+                className="transition-transform group-hover:translate-x-0.5"
+              />
             </Link>
           </div>
         </Reveal>
@@ -82,8 +85,8 @@ export function ProductsPreview() {
                     Workflow Software & Automation
                   </h3>
                   <p className="mt-2 max-w-xl text-[14px] leading-relaxed text-muted-foreground">
-                    AI-assisted workflow software and automation tools built to reduce
-                    manual effort, speed up processing, and improve daily operations.
+                    AI-assisted workflow software and automation tools built to reduce manual
+                    effort, speed up processing, and improve daily operations.
                   </p>
                 </div>
                 <ArrowUpRight className="hidden text-muted-foreground transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-hover:text-foreground md:block" />
@@ -150,9 +153,19 @@ export function ProductsPreview() {
 }
 
 function CompactCard({
-  img, alt, eyebrow, title, desc, tags,
+  img,
+  alt,
+  eyebrow,
+  title,
+  desc,
+  tags,
 }: {
-  img: string; alt: string; eyebrow: string; title: string; desc: string; tags: Tag[];
+  img: string;
+  alt: string;
+  eyebrow: string;
+  title: string;
+  desc: string;
+  tags: Tag[];
 }) {
   const reduce = useReducedMotion();
   return (
@@ -180,7 +193,9 @@ function CompactCard({
           <h3 className="font-display text-base font-semibold tracking-tight">{title}</h3>
           <p className="mt-1.5 text-[13px] leading-relaxed text-muted-foreground">{desc}</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
-            {tags.map((t) => <Tag key={t}>{t}</Tag>)}
+            {tags.map((t) => (
+              <Tag key={t}>{t}</Tag>
+            ))}
           </div>
         </div>
       </motion.article>

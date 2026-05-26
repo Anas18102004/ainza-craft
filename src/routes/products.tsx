@@ -10,7 +10,10 @@ export const Route = createFileRoute("/products")({
   head: () => ({
     meta: [
       { title: "Products — AINZA" },
-      { name: "description", content: "Practical software, automation systems, and digital platforms by AINZA." },
+      {
+        name: "description",
+        content: "Practical software, automation systems, and digital platforms by AINZA.",
+      },
       { property: "og:title", content: "Products — AINZA" },
       { property: "og:description", content: "Solutions built around real business outcomes." },
     ],
@@ -23,13 +26,21 @@ const CATEGORIES = [
     id: "workflow",
     name: "Workflow & Automation Software",
     desc: "Internal systems that replace spreadsheets, email chains, and brittle manual steps.",
-    examples: ["Order & inventory operations", "Approvals & document routing", "Production & logistics tracking"],
+    examples: [
+      "Order & inventory operations",
+      "Approvals & document routing",
+      "Production & logistics tracking",
+    ],
   },
   {
     id: "platforms",
     name: "Customer-Facing Platforms",
     desc: "Portals, marketplaces, and websites built for ongoing operation — not just launch day.",
-    examples: ["Service & enterprise websites", "Client & partner portals", "Quoting & lead-capture systems"],
+    examples: [
+      "Service & enterprise websites",
+      "Client & partner portals",
+      "Quoting & lead-capture systems",
+    ],
   },
   {
     id: "ai",
@@ -45,8 +56,7 @@ const CASES = [
     tag: "Workflow Software · Automation",
     client: "YES Fashion",
     title: "An operations system that runs the day-to-day floor.",
-    body:
-      "We replaced a tangle of spreadsheets and chat threads with a unified workflow system covering orders, production, inventory, and dispatch — with role-based access for floor staff, supervisors, and management.",
+    body: "We replaced a tangle of spreadsheets and chat threads with a unified workflow system covering orders, production, inventory, and dispatch — with role-based access for floor staff, supervisors, and management.",
     img: yesImg,
     features: [
       "Real-time order & production status",
@@ -65,8 +75,7 @@ const CASES = [
     tag: "Enterprise Logistics · Website",
     client: "Abrar Forwarders",
     title: "A logistics presence built for serious clients.",
-    body:
-      "A premium, fast, content-rich website that positions Abrar Forwarders against international competition — with service pages, quote capture, and clear messaging for freight, customs, and forwarding.",
+    body: "A premium, fast, content-rich website that positions Abrar Forwarders against international competition — with service pages, quote capture, and clear messaging for freight, customs, and forwarding.",
     img: abrarImg,
     features: [
       "Service architecture (air, sea, road, customs)",
@@ -85,8 +94,7 @@ const CASES = [
     tag: "Industrial Services · Platform",
     client: "Elite Enterprises",
     title: "An industrial services platform with depth.",
-    body:
-      "A widescreen, content-deep platform for an industrial services company — with project showcases, equipment and capability pages, and a contact pipeline designed for high-intent buyers.",
+    body: "A widescreen, content-deep platform for an industrial services company — with project showcases, equipment and capability pages, and a contact pipeline designed for high-intent buyers.",
     img: eliteImg,
     features: [
       "Project & capability showcases",
@@ -112,13 +120,15 @@ function ProductsPage() {
       />
 
       {/* Categories */}
-      <section className="relative mx-auto w-[min(1180px,calc(100%-32px))] pb-10">
+      <section className="relative mx-auto max-w-[1180px] px-4 pb-10">
         <div className="grid gap-4 md:grid-cols-3">
           {CATEGORIES.map((c, i) => (
             <Reveal key={c.id} delay={i * 0.05}>
               <div className="glass h-full rounded-2xl p-6">
                 <p className="label-eyebrow">Category · 0{i + 1}</p>
-                <h3 className="mt-3 font-display text-[18px] font-semibold leading-snug">{c.name}</h3>
+                <h3 className="mt-3 font-display text-[18px] font-semibold leading-snug">
+                  {c.name}
+                </h3>
                 <p className="mt-2 text-[14px] leading-relaxed text-muted-foreground">{c.desc}</p>
                 <ul className="mt-4 space-y-1.5">
                   {c.examples.map((e) => (
@@ -135,7 +145,7 @@ function ProductsPage() {
       </section>
 
       {/* Case studies */}
-      <section className="relative mx-auto w-[min(1180px,calc(100%-32px))] py-16">
+      <section className="relative mx-auto max-w-[1180px] px-4 py-16">
         <Reveal>
           <p className="label-eyebrow">Selected client work</p>
           <h2 className="mt-3 max-w-3xl font-display text-[clamp(1.6rem,3vw,2.2rem)] font-semibold tracking-tight">
@@ -164,7 +174,9 @@ function ProductsPage() {
                   <h3 className="mt-3 font-display text-[clamp(1.4rem,2.4vw,1.9rem)] font-semibold leading-[1.1] tracking-tight text-gradient-brand">
                     {c.client}
                   </h3>
-                  <p className="mt-2 font-display text-[18px] font-medium text-foreground/90">{c.title}</p>
+                  <p className="mt-2 font-display text-[18px] font-medium text-foreground/90">
+                    {c.title}
+                  </p>
                   <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">{c.body}</p>
 
                   <ul className="mt-5 space-y-1.5">
@@ -192,7 +204,7 @@ function ProductsPage() {
       </section>
 
       {/* Trusted by strip */}
-      <section className="relative mx-auto w-[min(1180px,calc(100%-32px))] py-14">
+      <section className="relative mx-auto max-w-[1180px] px-4 py-14">
         <Reveal>
           <div className="glass light-sweep relative overflow-hidden rounded-2xl px-6 py-6">
             <div className="flex flex-wrap items-center justify-between gap-6">
@@ -213,7 +225,7 @@ function ProductsPage() {
       </section>
 
       {/* CTA */}
-      <section className="relative mx-auto w-[min(1180px,calc(100%-32px))] pb-28 pt-8">
+      <section className="relative mx-auto max-w-[1180px] px-4 pb-28 pt-8">
         <Reveal>
           <div className="glass-strong animated-border relative overflow-hidden rounded-3xl px-8 py-12 md:px-14 md:py-16">
             <div className="pointer-events-none absolute -inset-20 -z-10 bg-radial-spot opacity-80" />
@@ -229,7 +241,11 @@ function ProductsPage() {
                   to="/contact"
                   className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet to-blue px-5 py-3 text-sm font-semibold text-[#0a0a16] shadow-[0_18px_50px_-12px_rgba(187,165,255,0.55)] transition-transform hover:-translate-y-0.5"
                 >
-                  Start a project <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+                  Start a project{" "}
+                  <ArrowRight
+                    size={16}
+                    className="transition-transform group-hover:translate-x-0.5"
+                  />
                 </Link>
                 <Link
                   to="/services"
@@ -251,13 +267,15 @@ function PageHero({ eyebrow, title, blurb }: { eyebrow: string; title: string; b
     <section className="relative overflow-hidden pb-16 pt-36 md:pt-40">
       <div className="absolute inset-0 -z-10 bg-radial-spot opacity-90" />
       <div className="absolute inset-0 -z-10 bg-grid opacity-[0.18]" />
-      <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
+      <div className="mx-auto max-w-[1180px] px-4">
         <Reveal>
           <p className="label-eyebrow">{eyebrow}</p>
           <h1 className="mt-4 max-w-3xl text-balance font-display text-[clamp(2.2rem,5vw,4rem)] font-semibold leading-[1.04] tracking-[-0.02em] text-gradient-brand">
             {title}
           </h1>
-          <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">{blurb}</p>
+          <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">
+            {blurb}
+          </p>
         </Reveal>
       </div>
     </section>

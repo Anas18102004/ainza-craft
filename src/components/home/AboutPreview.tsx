@@ -14,17 +14,17 @@ export function AboutPreview() {
   return (
     <section className="relative overflow-hidden py-24 md:py-32">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(900px_500px_at_85%_10%,rgba(187,165,255,0.14),transparent_60%)]" />
-      <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] items-center gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-14">
+      <div className="mx-auto grid max-w-[1180px] px-4 items-center gap-10 lg:grid-cols-[1fr_1.1fr] lg:gap-14">
         <Reveal>
           <p className="label-eyebrow">About AINZA</p>
           <h2 className="mt-3 text-balance font-display text-[clamp(1.8rem,3.6vw,2.6rem)] font-semibold leading-tight tracking-tight">
             A technology partner built for businesses that want more than delivery.
           </h2>
           <p className="mt-5 text-[15px] leading-relaxed text-muted-foreground">
-            Founded by <span className="text-foreground">Hamza Meman</span> and
-            co-founded by <span className="text-foreground">Mohammad Anas</span>,
-            AINZA combines strategy, engineering, design, and long-term support
-            to help businesses build technology they can depend on.
+            Founded by <span className="text-foreground">Hamza Meman</span> and co-founded by{" "}
+            <span className="text-foreground">Mohammad Anas</span>, AINZA combines strategy,
+            engineering, design, and long-term support to help businesses build technology they can
+            depend on.
           </p>
 
           <ul className="mt-6 space-y-2 text-[13.5px] text-muted-foreground">
@@ -44,13 +44,19 @@ export function AboutPreview() {
               className="group inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.03] px-5 py-3 text-sm font-medium text-foreground hover:bg-white/[0.07]"
             >
               About AINZA
-              <ArrowUpRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+              <ArrowUpRight
+                size={16}
+                className="transition-transform group-hover:translate-x-0.5"
+              />
             </Link>
           </div>
         </Reveal>
 
         <Reveal>
-          <div ref={ref} className="relative aspect-[5/4] overflow-hidden rounded-3xl border border-white/10 bg-black/40">
+          <div
+            ref={ref}
+            className="relative aspect-[5/4] overflow-hidden rounded-3xl border border-white/10 bg-black/40"
+          >
             <motion.img
               src={boardroom}
               alt="Premium boardroom with installed 3D AINZA wall signage"

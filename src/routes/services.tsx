@@ -1,22 +1,19 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Link } from "@tanstack/react-router";
-import {
-  ArrowRight,
-  Brain,
-  ShieldCheck,
-  Smartphone,
-  LayoutDashboard,
-  Cloud,
-  Compass,
-  Check,
-} from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
+import { ServiceIconVisual, type ServiceVisualId } from "@/components/site/ServiceIconVisual";
+import servicesCommandCenter from "@/assets/generated/services-command-center.jpg";
 
 export const Route = createFileRoute("/services")({
   head: () => ({
     meta: [
       { title: "Services — AINZA" },
-      { name: "description", content: "AI systems, cybersecurity, web & mobile, digital platforms, cloud & DevOps, and strategy from AINZA." },
+      {
+        name: "description",
+        content:
+          "AI systems, cybersecurity, web & mobile, digital platforms, cloud & DevOps, and strategy from AINZA.",
+      },
       { property: "og:title", content: "Services — AINZA" },
       { property: "og:description", content: "Services built around real business needs." },
     ],
@@ -27,7 +24,7 @@ export const Route = createFileRoute("/services")({
 const SERVICES = [
   {
     id: "ai",
-    icon: Brain,
+    visual: "ai",
     eyebrow: "01 · AI Systems & Automation",
     title: "Intelligent systems that remove operational drag.",
     blurb:
@@ -42,8 +39,8 @@ const SERVICES = [
     proof: { k: "Avg. cycle-time reduction", v: "35–60%" },
   },
   {
-    id: "sec",
-    icon: ShieldCheck,
+    id: "cyber",
+    visual: "cyber",
     eyebrow: "02 · Cybersecurity",
     title: "Security designed into the system, not bolted on.",
     blurb:
@@ -59,7 +56,7 @@ const SERVICES = [
   },
   {
     id: "apps",
-    icon: Smartphone,
+    visual: "apps",
     eyebrow: "03 · Web & Mobile Development",
     title: "Customer-grade products built for real usage.",
     blurb:
@@ -75,7 +72,7 @@ const SERVICES = [
   },
   {
     id: "platforms",
-    icon: LayoutDashboard,
+    visual: "platform",
     eyebrow: "04 · Digital Platforms",
     title: "Operational platforms that scale with your business.",
     blurb:
@@ -91,7 +88,7 @@ const SERVICES = [
   },
   {
     id: "cloud",
-    icon: Cloud,
+    visual: "cloud",
     eyebrow: "05 · Cloud & DevOps",
     title: "Infrastructure your team can actually operate.",
     blurb:
@@ -107,7 +104,7 @@ const SERVICES = [
   },
   {
     id: "strategy",
-    icon: Compass,
+    visual: "strategy",
     eyebrow: "06 · Strategy & Consulting",
     title: "A clear technology direction, grounded in your P&L.",
     blurb:
@@ -121,12 +118,32 @@ const SERVICES = [
     ],
     proof: { k: "Typical engagement", v: "2–6 weeks" },
   },
-];
+] satisfies Array<{
+  id: string;
+  visual: ServiceVisualId;
+  eyebrow: string;
+  title: string;
+  blurb: string;
+  deliverables: string[];
+  proof: { k: string; v: string };
+}>;
 
 const PROCESS = [
-  { step: "01", title: "Discover", body: "Operations walkthrough, stakeholder interviews, success metrics." },
-  { step: "02", title: "Design", body: "Architecture, security model, UX flows — reviewed and signed off." },
-  { step: "03", title: "Build", body: "Iterative delivery in two-week increments with working demos." },
+  {
+    step: "01",
+    title: "Discover",
+    body: "Operations walkthrough, stakeholder interviews, success metrics.",
+  },
+  {
+    step: "02",
+    title: "Design",
+    body: "Architecture, security model, UX flows — reviewed and signed off.",
+  },
+  {
+    step: "03",
+    title: "Build",
+    body: "Iterative delivery in two-week increments with working demos.",
+  },
   { step: "04", title: "Launch", body: "Hardening, load tests, documentation, and handover." },
   { step: "05", title: "Support", body: "Long-term partnership: monitoring, evolution, on-call." },
 ];
@@ -141,38 +158,41 @@ function ServicesPage() {
       />
 
       {/* Capability grid summary */}
-      <section className="relative mx-auto w-[min(1180px,calc(100%-32px))] pb-10">
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+      <section className="relative mx-auto max-w-[1180px] px-4 pb-10">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
           {SERVICES.map((s) => (
             <a
               key={s.id}
               href={`#${s.id}`}
               className="glass group flex items-center gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-white/[0.07]"
             >
-              <span className="grid h-9 w-9 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-violet">
-                <s.icon size={16} />
-              </span>
+              <ServiceIconVisual
+                id={s.visual}
+                decorative
+                platformVariant="dashboard"
+                className="h-11 w-11 shrink-0"
+              />
               <span className="text-[13px] font-medium text-foreground/90">
                 {s.eyebrow.split("·")[1]?.trim()}
               </span>
-              <ArrowRight size={14} className="ml-auto text-dim transition-transform group-hover:translate-x-0.5" />
+              <ArrowRight
+                size={14}
+                className="ml-auto text-dim transition-transform group-hover:translate-x-0.5"
+              />
             </a>
           ))}
         </div>
       </section>
 
       {/* Detailed service sections */}
-      <section className="relative mx-auto w-[min(1180px,calc(100%-32px))] py-16">
+      <section className="relative mx-auto max-w-[1180px] px-4 py-16">
         <div className="flex flex-col gap-20">
           {SERVICES.map((s, i) => (
             <Reveal key={s.id}>
-              <article
-                id={s.id}
-                className="grid scroll-mt-32 gap-10 md:grid-cols-12 md:gap-12"
-              >
+              <article id={s.id} className="grid scroll-mt-32 gap-10 md:grid-cols-12 md:gap-12">
                 {/* Visual side */}
                 <div className={`md:col-span-5 ${i % 2 === 1 ? "md:order-2" : ""}`}>
-                  <ServiceVisual icon={s.icon} index={i} />
+                  <ServiceVisual visual={s.visual} index={i} />
                 </div>
 
                 {/* Content side */}
@@ -187,7 +207,10 @@ function ServicesPage() {
 
                   <div className="mt-7 grid gap-2 sm:grid-cols-2">
                     {s.deliverables.map((d) => (
-                      <div key={d} className="flex items-start gap-2 text-[14px] text-foreground/85">
+                      <div
+                        key={d}
+                        className="flex items-start gap-2 text-[14px] text-foreground/85"
+                      >
                         <Check size={14} className="mt-1 shrink-0 text-cyan" />
                         <span>{d}</span>
                       </div>
@@ -196,7 +219,9 @@ function ServicesPage() {
 
                   <div className="mt-7 inline-flex items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3">
                     <span className="label-eyebrow">{s.proof.k}</span>
-                    <span className="font-display text-[15px] font-semibold text-foreground">{s.proof.v}</span>
+                    <span className="font-display text-[15px] font-semibold text-foreground">
+                      {s.proof.v}
+                    </span>
                   </div>
                 </div>
               </article>
@@ -206,7 +231,7 @@ function ServicesPage() {
       </section>
 
       {/* Process strip */}
-      <section className="relative mx-auto w-[min(1180px,calc(100%-32px))] py-20">
+      <section className="relative mx-auto max-w-[1180px] px-4 py-20">
         <Reveal>
           <p className="label-eyebrow">How we work</p>
           <h2 className="mt-3 font-display text-[clamp(1.6rem,3vw,2.2rem)] font-semibold tracking-tight">
@@ -219,9 +244,13 @@ function ServicesPage() {
             {PROCESS.map((p, i) => (
               <Reveal key={p.step} delay={i * 0.05}>
                 <li className="glass relative rounded-2xl p-5">
-                  <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-violet">{p.step}</div>
+                  <div className="font-mono text-[11px] uppercase tracking-[0.22em] text-violet">
+                    {p.step}
+                  </div>
                   <div className="mt-2 font-display text-[16px] font-semibold">{p.title}</div>
-                  <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">{p.body}</p>
+                  <p className="mt-2 text-[13.5px] leading-relaxed text-muted-foreground">
+                    {p.body}
+                  </p>
                 </li>
               </Reveal>
             ))}
@@ -241,21 +270,20 @@ function PageHero({ eyebrow, title, blurb }: { eyebrow: string; title: string; b
     <section className="relative overflow-hidden pb-16 pt-36 md:pt-40">
       <div className="absolute inset-0 -z-10 bg-radial-spot opacity-90" />
       <div className="absolute inset-0 -z-10 bg-grid opacity-[0.18]" />
-      <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
-        <Reveal>
-          <p className="label-eyebrow">{eyebrow}</p>
-          <h1 className="mt-4 max-w-3xl text-balance font-display text-[clamp(2.2rem,5vw,4rem)] font-semibold leading-[1.04] tracking-[-0.02em] text-gradient-brand">
-            {title}
-          </h1>
-          <p className="mt-6 max-w-2xl text-[17px] leading-relaxed text-muted-foreground">{blurb}</p>
-        </Reveal>
+      <div className="mx-auto max-w-[1180px] px-4">
+        <p className="label-eyebrow">{eyebrow}</p>
+        <h1 className="mt-4 max-w-[350px] text-balance font-display text-[clamp(2.2rem,5vw,4rem)] font-semibold leading-[1.04] tracking-[-0.02em] text-gradient-brand sm:max-w-3xl">
+          {title}
+        </h1>
+        <p className="mt-6 max-w-[330px] text-[17px] leading-relaxed text-muted-foreground sm:max-w-2xl">
+          {blurb}
+        </p>
       </div>
     </section>
   );
 }
 
-function ServiceVisual({ icon: Icon, index }: { icon: typeof Brain; index: number }) {
-  // Six distinct CSS-driven visuals keyed off the index.
+function ServiceVisual({ visual, index }: { visual: ServiceVisualId; index: number }) {
   const variants = [
     "from-violet/30 via-blue/15 to-transparent",
     "from-cyan/25 via-blue/15 to-transparent",
@@ -265,24 +293,36 @@ function ServiceVisual({ icon: Icon, index }: { icon: typeof Brain; index: numbe
     "from-blue/25 via-cyan/15 to-transparent",
   ];
   return (
-    <div className="glass animated-border relative overflow-hidden rounded-3xl p-6 md:p-8">
-      <div className={`pointer-events-none absolute -inset-10 -z-10 bg-gradient-to-br ${variants[index % 6]} blur-3xl`} />
-      <div className="absolute inset-0 -z-10 bg-grid opacity-[0.15]" />
+    <div className="service-detail-visual glass animated-border relative overflow-hidden rounded-3xl p-6 md:p-8">
+      <div
+        className={`pointer-events-none absolute -inset-10 -z-10 bg-gradient-to-br ${variants[index % 6]} blur-3xl`}
+      />
+      <img
+        src={servicesCommandCenter}
+        alt=""
+        aria-hidden
+        className="absolute inset-0 -z-10 h-full w-full object-cover opacity-20"
+        loading="lazy"
+      />
+      <div className="absolute inset-0 -z-10 bg-grid opacity-[0.14]" />
       <div className="flex aspect-[5/4] flex-col">
         <div className="flex items-center gap-2">
-          <span className="grid h-10 w-10 place-items-center rounded-xl border border-white/12 bg-white/[0.05] text-violet">
-            <Icon size={18} />
-          </span>
+          <ServiceIconVisual
+            id={visual}
+            decorative
+            platformVariant="dashboard"
+            className="h-16 w-16 shrink-0"
+          />
           <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-dim">
             ainza.system / module {String(index + 1).padStart(2, "0")}
           </span>
         </div>
 
-        <div className="mt-6 grid flex-1 grid-cols-3 gap-2">
+        <div className="service-detail-map mt-6 grid flex-1 grid-cols-3 gap-2">
           {Array.from({ length: 9 }).map((_, i) => (
             <div
               key={i}
-              className="rounded-lg border border-white/8 bg-white/[0.03]"
+              className="rounded-lg border border-white/[0.08] bg-white/[0.035]"
               style={{
                 opacity: 0.4 + ((i + index) % 5) * 0.12,
               }}
@@ -291,7 +331,7 @@ function ServiceVisual({ icon: Icon, index }: { icon: typeof Brain; index: numbe
         </div>
 
         <div className="mt-5 flex items-center justify-between">
-          <div className="h-1.5 w-2/3 overflow-hidden rounded-full bg-white/8">
+          <div className="h-1.5 w-2/3 overflow-hidden rounded-full bg-white/[0.08]">
             <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-violet to-cyan" />
           </div>
           <span className="font-mono text-[10px] text-dim">OK</span>
@@ -303,7 +343,7 @@ function ServiceVisual({ icon: Icon, index }: { icon: typeof Brain; index: numbe
 
 function CtaBand() {
   return (
-    <section className="relative mx-auto w-[min(1180px,calc(100%-32px))] pb-28">
+    <section className="relative mx-auto max-w-[1180px] px-4 pb-28">
       <Reveal>
         <div className="glass-strong animated-border relative overflow-hidden rounded-3xl px-8 py-12 md:px-14 md:py-16">
           <div className="pointer-events-none absolute -inset-20 -z-10 bg-radial-spot opacity-80" />
@@ -322,7 +362,11 @@ function CtaBand() {
                 to="/contact"
                 className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet to-blue px-5 py-3 text-sm font-semibold text-[#0a0a16] shadow-[0_18px_50px_-12px_rgba(187,165,255,0.55)] transition-transform hover:-translate-y-0.5"
               >
-                Talk to AINZA <ArrowRight size={16} className="transition-transform group-hover:translate-x-0.5" />
+                Talk to AINZA{" "}
+                <ArrowRight
+                  size={16}
+                  className="transition-transform group-hover:translate-x-0.5"
+                />
               </Link>
               <Link
                 to="/products"

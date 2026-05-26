@@ -1,18 +1,16 @@
 import { Link } from "@tanstack/react-router";
-import logoMark from "@/assets/brand/logo.png";
+import { BrandLockup } from "@/components/site/BrandWordmark";
 
 export function SiteFooter() {
   return (
     <footer className="relative border-t border-white/10 bg-gradient-to-b from-transparent to-black/40">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-violet/40 to-transparent" />
-      <div className="mx-auto grid w-[min(1180px,calc(100%-32px))] gap-12 py-16 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-[1180px] px-4 gap-12 py-16 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
-          <div className="flex items-center gap-2">
-            <img src={logoMark} alt="" className="h-8 w-auto" aria-hidden />
-            <span className="font-display text-[15px] font-semibold tracking-[0.18em]">AINZA</span>
-          </div>
+          <BrandLockup />
           <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
-            Engineering intelligent systems, secure platforms, and digital products built for long-term growth.
+            Engineering intelligent systems, secure platforms, and digital products built for
+            long-term growth.
           </p>
           <div className="mt-6 flex gap-3">
             <Link
@@ -30,31 +28,40 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <FooterCol title="Navigate" links={[
-          ["Home", "/"],
-          ["Services", "/services"],
-          ["Products", "/products"],
-          ["AI Systems", "/ai-systems"],
-          ["About", "/about"],
-          ["Contact", "/contact"],
-        ]} />
+        <FooterCol
+          title="Navigate"
+          links={[
+            ["Home", "/"],
+            ["Services", "/services"],
+            ["Products", "/products"],
+            ["AI Systems", "/ai-systems"],
+            ["About", "/about"],
+            ["Contact", "/contact"],
+          ]}
+        />
 
-        <FooterCol title="Services" links={[
-          ["AI Systems & Automation", "/services"],
-          ["Cybersecurity", "/services"],
-          ["Web & Mobile Development", "/services"],
-          ["Digital Platforms", "/services"],
-          ["Cloud & DevOps", "/services"],
-          ["Strategy & Consulting", "/services"],
-        ]} />
+        <FooterCol
+          title="Services"
+          links={[
+            ["AI Systems & Automation", "/services"],
+            ["Cybersecurity", "/services"],
+            ["Web & Mobile Development", "/services"],
+            ["Digital Platforms", "/services"],
+            ["Cloud & DevOps", "/services"],
+            ["Strategy & Consulting", "/services"],
+          ]}
+        />
 
-        <FooterCol title="Talk to us" links={[
-          ["Start a Project", "/contact"],
-          ["Talk to AINZA", "/contact"],
-        ]} />
+        <FooterCol
+          title="Talk to us"
+          links={[
+            ["Start a Project", "/contact"],
+            ["Talk to AINZA", "/contact"],
+          ]}
+        />
       </div>
       <div className="border-t border-white/5">
-        <div className="mx-auto flex w-[min(1180px,calc(100%-32px))] flex-col items-start justify-between gap-2 py-6 text-[12px] text-muted-foreground md:flex-row md:items-center">
+        <div className="mx-auto flex max-w-[1180px] px-4 flex-col items-start justify-between gap-2 py-6 text-[12px] text-muted-foreground md:flex-row md:items-center">
           <span>© {new Date().getFullYear()} AINZA. All rights reserved.</span>
           <span className="font-mono text-dim">Built around real operations.</span>
         </div>
@@ -63,7 +70,13 @@ export function SiteFooter() {
   );
 }
 
-function FooterCol({ title, links }: { title: string; links: ReadonlyArray<readonly [string, string]> }) {
+function FooterCol({
+  title,
+  links,
+}: {
+  title: string;
+  links: ReadonlyArray<readonly [string, string]>;
+}) {
   return (
     <div>
       <h4 className="label-eyebrow">{title}</h4>

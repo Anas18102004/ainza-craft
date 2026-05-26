@@ -6,10 +6,30 @@ import { Reveal } from "@/components/site/Reveal";
 type Pillar = { n: string; title: string; desc: string; icon: LucideIcon };
 
 const PILLARS: Pillar[] = [
-  { n: "01", title: "We solve real business problems.", desc: "Every solution is shaped around operations, goals, and measurable outcomes.", icon: Target },
-  { n: "02", title: "We stay involved after launch.",   desc: "We provide support, improvements, and guidance after delivery.",           icon: Headphones },
-  { n: "03", title: "We build secure, reliable systems.", desc: "Security, performance, and maintainability are considered from the start.", icon: ShieldCheck },
-  { n: "04", title: "We act as a long-term partner.",   desc: "We grow with your business and build technology for what comes next.",     icon: Handshake },
+  {
+    n: "01",
+    title: "We solve real business problems.",
+    desc: "Every solution is shaped around operations, goals, and measurable outcomes.",
+    icon: Target,
+  },
+  {
+    n: "02",
+    title: "We stay involved after launch.",
+    desc: "We provide support, improvements, and guidance after delivery.",
+    icon: Headphones,
+  },
+  {
+    n: "03",
+    title: "We build secure, reliable systems.",
+    desc: "Security, performance, and maintainability are considered from the start.",
+    icon: ShieldCheck,
+  },
+  {
+    n: "04",
+    title: "We act as a long-term partner.",
+    desc: "We grow with your business and build technology for what comes next.",
+    icon: Handshake,
+  },
 ];
 
 export function WhyAinza() {
@@ -26,7 +46,7 @@ export function WhyAinza() {
         <div className="absolute inset-0 bg-[radial-gradient(900px_500px_at_50%_-10%,rgba(124,167,255,0.10),transparent_60%)]" />
       </div>
 
-      <div className="mx-auto w-[min(1180px,calc(100%-32px))]">
+      <div className="mx-auto max-w-[1180px] px-4">
         <Reveal>
           <div className="max-w-2xl">
             <p className="label-eyebrow">The AINZA Standard</p>
@@ -34,8 +54,8 @@ export function WhyAinza() {
               Why businesses choose AINZA.
             </h2>
             <p className="mt-4 text-[15px] leading-relaxed text-muted-foreground">
-              We do more than deliver projects. We build systems around your business,
-              support them after launch, and help them improve as you grow.
+              We do more than deliver projects. We build systems around your business, support them
+              after launch, and help them improve as you grow.
             </p>
           </div>
         </Reveal>
@@ -52,12 +72,12 @@ export function WhyAinza() {
             {PILLARS.map((p, i) => {
               const isRight = i % 2 === 1;
               return (
-                <li key={p.n} className="relative grid grid-cols-[40px_1fr] gap-4 md:grid-cols-2 md:gap-8">
+                <li
+                  key={p.n}
+                  className="relative grid grid-cols-[40px_1fr] gap-4 md:grid-cols-2 md:gap-8"
+                >
                   {/* marker — desktop centered, mobile left */}
-                  <span
-                    className="absolute left-5 top-3 -translate-x-1/2 md:left-1/2"
-                    aria-hidden
-                  >
+                  <span className="absolute left-5 top-3 -translate-x-1/2 md:left-1/2" aria-hidden>
                     <span className="block h-3 w-3 rounded-full bg-violet shadow-[0_0_18px_rgba(187,165,255,0.9)] ring-4 ring-background" />
                   </span>
 
@@ -67,7 +87,9 @@ export function WhyAinza() {
                   <Reveal delay={i * 0.05} className={isRight ? "md:col-start-2" : ""}>
                     <div className="ml-10 rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition-colors hover:border-violet/30 md:ml-0 md:p-6">
                       <div className="flex items-center gap-3">
-                        <span className="font-mono text-[12px] tracking-[0.22em] text-dim">{p.n}</span>
+                        <span className="font-mono text-[12px] tracking-[0.22em] text-dim">
+                          {p.n}
+                        </span>
                         <span className="grid h-9 w-9 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-violet">
                           <p.icon size={16} />
                         </span>

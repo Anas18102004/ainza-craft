@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { Menu, X } from "lucide-react";
-import logoMark from "@/assets/brand/logo.png";
+import { BrandLockup } from "@/components/site/BrandWordmark";
 
 const NAV = [
   { to: "/", label: "Home" },
@@ -27,17 +27,12 @@ export function SiteHeader() {
     <>
       <header
         className={[
-          "fixed left-1/2 top-4 z-50 flex w-[min(1180px,calc(100%-32px))] -translate-x-1/2 items-center justify-between gap-6 rounded-2xl px-3 py-2 transition-all duration-500",
-          scrolled
-            ? "glass-strong ring-violet-glow"
-            : "glass",
+          "fixed inset-x-4 top-4 z-50 mx-auto flex max-w-[1180px] items-center justify-between gap-6 rounded-2xl px-3 py-2 transition-all duration-500",
+          scrolled ? "glass-strong ring-violet-glow" : "glass",
         ].join(" ")}
       >
-        <Link to="/" className="flex items-center gap-2 pl-2">
-          <img src={logoMark} alt="" className="h-7 w-auto" aria-hidden />
-          <span className="font-display text-[15px] font-semibold tracking-[0.18em] text-foreground">
-            AINZA
-          </span>
+        <Link to="/" className="flex min-h-11 items-center pl-2">
+          <BrandLockup lockup="compact" />
         </Link>
 
         <nav className="hidden items-center gap-1 md:flex">

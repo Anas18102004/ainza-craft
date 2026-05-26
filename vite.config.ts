@@ -1,4 +1,4 @@
-// @lovable.dev/vite-tanstack-config already includes the following — do NOT add them manually
+// @lovable.dev/vite-tanstack-config already includes the following; do not add them manually
 // or the app will break with duplicate plugins:
 //   - tanstackStart, viteReact, tailwindcss, tsConfigPaths, cloudflare (build-only),
 //     componentTagger (dev-only), VITE_* env injection, @ path alias, React/TanStack dedupe,
@@ -6,9 +6,12 @@
 // You can pass additional config via defineConfig({ vite: { ... } }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
-// Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
-// @cloudflare/vite-plugin builds from this — wrangler.jsonc main alone is insufficient.
+// Firebase App Hosting runs the app through a Node server wrapper, so it does not
+// need the Cloudflare Vite adapter that powers the existing worker build.
+const isFirebaseBuild = process.env.AINZA_DEPLOY_TARGET === "firebase";
+
 export default defineConfig({
+  cloudflare: isFirebaseBuild ? false : undefined,
   tanstackStart: {
     server: { entry: "server" },
   },
