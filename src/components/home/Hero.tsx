@@ -1,11 +1,13 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 
+const FRAME_COUNT = 721;
 const SOURCE_WIDTH = 1920;
 const SOURCE_HEIGHT = 1080;
 const FINAL_STILL_PATH = "/cinematic/5TH.png";
-const HERO_VIDEO_PATH = "/cinematic/ainza-hero-sequence.mp4";
-const HERO_POSTER_PATH = "/cinematic/ainza-framed-1080/frame_0001.jpg";
+
+const framePath = (index: number) =>
+  `/cinematic/ainza-framed-1080/frame_${String(index + 1).padStart(4, "0")}.jpg`;
 
 type StoryCopy = {
   element: HTMLElement;
@@ -16,16 +18,14 @@ type StoryCopy = {
 export function Hero() {
   const heroRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const loaderTextRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const hero = heroRef.current;
     const canvas = canvasRef.current;
-    const video = videoRef.current;
     const context = canvas?.getContext("2d", { alpha: false });
 
-    if (!hero || !canvas || !video || !context) return undefined;
+    if (!hero || !canvas || !context) return undefined;
 
     let mounted = true;
     const copies: StoryCopy[] = Array.from(
@@ -36,18 +36,17 @@ export function Hero() {
       end: Number(element.dataset.end ?? 1),
     }));
 
-    let posterImage: HTMLImageElement | null = null;
-    let posterReady = false;
+    const frames: Array<HTMLImageElement | null | undefined> = new Array(FRAME_COUNT);
+    const requestedFrames = new Set<number>();
     let finalStillImage: HTMLImageElement | null = null;
     let finalStillReady = false;
-    let videoReady = false;
-    let videoCanPlayThrough = false;
-    let videoDuration = 30;
-    let currentProgress = 0;
+    let finalStillRequested = false;
+    let loadedFrames = 0;
+    let currentFrame = 0;
+    let targetFrame = 0;
     let targetProgress = 0;
-    let renderedVideoTime = -1;
+    let renderedFrame = -1;
     let renderedFinalBlend = -1;
-    let isSeeking = false;
     let cssWidth = 0;
     let cssHeight = 0;
     let dpr = 1;
@@ -93,17 +92,13 @@ export function Hero() {
       return Math.min(max, Math.max(min, value));
     }
 
+    function unique(items: number[]) {
+      return [...new Set(items)].filter((index) => index >= 0 && index < FRAME_COUNT);
+    }
+
     function smootherstep(value: number) {
       const x = clamp(value);
       return x * x * x * (x * (x * 6 - 15) + 10);
-    }
-
-    function getBufferedRatio() {
-      if (!Number.isFinite(video.duration) || video.duration <= 0 || video.buffered.length === 0) {
-        return 0;
-      }
-
-      return clamp(video.buffered.end(video.buffered.length - 1) / video.duration);
     }
 
     function resizeCanvas() {
@@ -125,8 +120,22 @@ export function Hero() {
       context.setTransform(dpr, 0, 0, dpr, 0, 0);
       context.imageSmoothingEnabled = true;
       context.imageSmoothingQuality = "high";
-      renderedVideoTime = -1;
+      renderedFrame = -1;
       renderedFinalBlend = -1;
+    }
+
+    function nearestLoadedFrameIndex(index: number) {
+      if (frames[index]?.complete) return index;
+
+      for (let distance = 1; distance < FRAME_COUNT; distance += 1) {
+        const previous = index - distance;
+        const next = index + distance;
+
+        if (previous >= 0 && frames[previous]?.complete) return previous;
+        if (next < FRAME_COUNT && frames[next]?.complete) return next;
+      }
+
+      return -1;
     }
 
     function drawBackground() {
@@ -158,15 +167,9 @@ export function Hero() {
       context.restore();
     }
 
-    function getDrawLayout(source: HTMLImageElement | HTMLVideoElement) {
-      const naturalWidth =
-        "videoWidth" in source
-          ? source.videoWidth || SOURCE_WIDTH
-          : source.naturalWidth || SOURCE_WIDTH;
-      const naturalHeight =
-        "videoHeight" in source
-          ? source.videoHeight || SOURCE_HEIGHT
-          : source.naturalHeight || SOURCE_HEIGHT;
+    function getDrawLayout(image: HTMLImageElement) {
+      const naturalWidth = image.naturalWidth || SOURCE_WIDTH;
+      const naturalHeight = image.naturalHeight || SOURCE_HEIGHT;
       const headerSafe = cssWidth <= 980 ? 82 : 92;
       const stageHeight = Math.max(360, cssHeight - headerSafe);
       const sourceRatio = naturalWidth / naturalHeight;
@@ -211,10 +214,10 @@ export function Hero() {
       );
     }
 
-    function drawCinematicSource(source: HTMLImageElement | HTMLVideoElement | null, alpha = 1) {
-      if (!source) return;
+    function drawCinematicImage(image: HTMLImageElement | null, alpha = 1) {
+      if (!image) return;
 
-      const { main, backdrop, edge, fillBackdrop } = getDrawLayout(source);
+      const { main, backdrop, edge, fillBackdrop } = getDrawLayout(image);
       const spillWidth = Math.round(Math.min(80, Math.max(40, cssWidth * 0.045)));
       const leftSpillEnd = Math.max(0, Math.min(main.x + spillWidth, cssWidth * 0.36));
       const leftFeatherStart = Math.max(0, main.x - Math.round(spillWidth * 0.55));
@@ -226,7 +229,7 @@ export function Hero() {
 
       context.save();
       context.globalAlpha = alpha * (fillBackdrop ? 0.28 : 0.38);
-      context.drawImage(source, edge.x, edge.y, edge.width, edge.height);
+      context.drawImage(image, edge.x, edge.y, edge.width, edge.height);
       context.fillStyle = "rgba(5, 5, 17, 0.04)";
       context.fillRect(0, 0, cssWidth, cssHeight);
       context.restore();
@@ -237,7 +240,7 @@ export function Hero() {
         context.rect(0, 0, leftSpillEnd, cssHeight);
         context.clip();
         context.globalAlpha = alpha * 0.32;
-        context.drawImage(source, backdrop.x, backdrop.y, backdrop.width, backdrop.height);
+        context.drawImage(image, backdrop.x, backdrop.y, backdrop.width, backdrop.height);
         const spillMask = context.createLinearGradient(0, 0, leftSpillEnd, 0);
         spillMask.addColorStop(0, "rgba(5, 5, 17, 0.03)");
         spillMask.addColorStop(0.5, "rgba(5, 5, 17, 0.01)");
@@ -254,7 +257,7 @@ export function Hero() {
         context.rect(rightSpillStart, 0, cssWidth - rightSpillStart, cssHeight);
         context.clip();
         context.globalAlpha = alpha * 0.32;
-        context.drawImage(source, backdrop.x, backdrop.y, backdrop.width, backdrop.height);
+        context.drawImage(image, backdrop.x, backdrop.y, backdrop.width, backdrop.height);
         const rightSpillMask = context.createLinearGradient(rightSpillStart, 0, cssWidth, 0);
         rightSpillMask.addColorStop(0, "rgba(5, 5, 17, 0)");
         rightSpillMask.addColorStop(0.5, "rgba(5, 5, 17, 0.01)");
@@ -268,7 +271,7 @@ export function Hero() {
       if (fillBackdrop) {
         context.save();
         context.globalAlpha = alpha * 0.14;
-        context.drawImage(source, backdrop.x, backdrop.y, backdrop.width, backdrop.height);
+        context.drawImage(image, backdrop.x, backdrop.y, backdrop.width, backdrop.height);
         context.fillStyle = "rgba(5, 5, 15, 0.02)";
         context.fillRect(0, 0, cssWidth, cssHeight);
         context.restore();
@@ -276,7 +279,7 @@ export function Hero() {
 
       context.save();
       context.globalAlpha = alpha;
-      context.drawImage(source, main.x, main.y, main.width, main.height);
+      context.drawImage(image, main.x, main.y, main.width, main.height);
       context.restore();
 
       if (main.x > 0 && leftFeatherEnd > leftFeatherStart) {
@@ -306,21 +309,21 @@ export function Hero() {
       }
     }
 
-    function drawFrame() {
-      const source =
-        videoReady && video.readyState >= HTMLMediaElement.HAVE_CURRENT_DATA ? video : posterImage;
-      if (!source) return;
+    function drawFrame(index: number) {
+      const frameIndex = nearestLoadedFrameIndex(index);
+      if (frameIndex === -1) return;
 
+      const image = frames[frameIndex];
       const finalBlend = getFinalStillBlend(targetProgress);
 
       drawBackground();
-      drawCinematicSource(source);
+      drawCinematicImage(image ?? null);
 
       if (finalBlend > 0) {
-        drawCinematicSource(finalStillImage, finalBlend);
+        drawCinematicImage(finalStillImage, finalBlend);
       }
 
-      renderedVideoTime = video.currentTime;
+      renderedFrame = frameIndex;
       renderedFinalBlend = finalBlend;
     }
 
@@ -350,26 +353,16 @@ export function Hero() {
     }
 
     function updateLoader() {
-      let progress = posterReady ? 16 : 0;
-
-      progress = Math.max(progress, Math.round(getBufferedRatio() * 100));
-
-      if (videoReady) progress = Math.max(progress, 62);
-      if (videoCanPlayThrough || getBufferedRatio() >= 0.96) progress = 100;
-
+      const progress = Math.round((loadedFrames / FRAME_COUNT) * 100);
       hero.style.setProperty("--cinematic-load-progress", `${progress}%`);
       if (loaderTextRef.current) {
         loaderTextRef.current.textContent =
-          progress < 100 ? `Loading cinematic ${progress}%` : "Cinematic ready";
+          progress < 100 ? `Loading sequence ${progress}%` : "Sequence ready";
       }
-      if (progress >= 100) {
+      if (progress === 100) {
         window.setTimeout(() => {
           if (mounted) hero.style.setProperty("--cinematic-loader-opacity", "0");
         }, 500);
-      } else if (videoReady) {
-        window.setTimeout(() => {
-          if (mounted) hero.style.setProperty("--cinematic-loader-opacity", "0");
-        }, 1100);
       }
     }
 
@@ -451,35 +444,49 @@ export function Hero() {
       autoIntroState.timeoutId = window.setTimeout(runAutoIntro, autoIntroConfig.delay);
     }
 
-    function loadPoster() {
+    function loadFrame(index: number, priority = "auto") {
+      if (requestedFrames.has(index)) return Promise.resolve(frames[index] ?? null);
+      requestedFrames.add(index);
+
       return new Promise<HTMLImageElement | null>((resolve) => {
         const image = new Image();
         image.decoding = "async";
-        image.loading = "eager";
+        if (priority === "eager") image.loading = "eager";
         image.onload = () => {
           if (!mounted) {
             resolve(null);
             return;
           }
-          posterImage = image;
-          posterReady = true;
-          drawFrame();
+          loadedFrames += 1;
+          frames[index] = image;
+          if (index === 0 || Math.abs(index - targetFrame) <= 3) {
+            drawFrame(targetFrame);
+          }
+          if (index === 0) {
+            scheduleAutoIntro();
+          }
           updateLoader();
           resolve(image);
         };
         image.onerror = () => {
-          if (mounted) updateLoader();
+          if (mounted) {
+            loadedFrames += 1;
+            updateLoader();
+          }
           resolve(null);
         };
-        image.src = HERO_POSTER_PATH;
+        image.src = framePath(index);
       });
     }
 
-    function loadFinalStill() {
+    function loadFinalStill(priority = "auto") {
+      if (finalStillRequested) return Promise.resolve(finalStillImage);
+      finalStillRequested = true;
+
       return new Promise<HTMLImageElement | null>((resolve) => {
         const image = new Image();
         image.decoding = "async";
-        image.loading = "eager";
+        if (priority === "eager") image.loading = "eager";
         image.onload = () => {
           if (!mounted) {
             resolve(null);
@@ -487,9 +494,9 @@ export function Hero() {
           }
           finalStillImage = image;
           finalStillReady = true;
-          renderedVideoTime = -1;
+          renderedFrame = -1;
           renderedFinalBlend = -1;
-          drawFrame();
+          drawFrame(clamp(Math.round(currentFrame), 0, FRAME_COUNT - 1));
           resolve(image);
         };
         image.onerror = () => {
@@ -500,108 +507,55 @@ export function Hero() {
       });
     }
 
-    function requestVideoTime(progress: number) {
-      if (!videoReady || !Number.isFinite(videoDuration) || videoDuration <= 0) return;
+    function requestFrameWindow(center: number, radius = 14) {
+      const indexes = [];
+      for (let offset = -radius; offset <= radius; offset += 1) {
+        indexes.push(center + offset);
+      }
+      unique(indexes).forEach((index) => {
+        void loadFrame(index);
+      });
+    }
 
-      const nextTime = clamp(progress) * Math.max(0, videoDuration - 0.05);
-      if (isSeeking || Math.abs(video.currentTime - nextTime) < 0.035) return;
+    async function preloadFrames() {
+      const keyFrames = unique([0, 108, 216, 360, 504, 648, 720]);
+      const openingFrames = unique(Array.from({ length: 42 }, (_, index) => index));
+      const priorityFrames = unique([...keyFrames, ...openingFrames]);
+      const finalStillPromise = loadFinalStill("eager");
 
-      isSeeking = true;
-      try {
-        video.currentTime = nextTime;
-      } catch {
-        isSeeking = false;
+      await loadFrame(0, "eager");
+      await Promise.all([
+        finalStillPromise,
+        ...priorityFrames.filter((index) => index !== 0).map((index) => loadFrame(index, "eager")),
+      ]);
+
+      const remaining = [];
+      for (let index = 0; index < FRAME_COUNT; index += 1) {
+        if (!requestedFrames.has(index)) remaining.push(index);
+      }
+
+      const batchSize = 8;
+      for (let index = 0; index < remaining.length && mounted; index += batchSize) {
+        const batch = remaining.slice(index, index + batchSize);
+        await Promise.all(batch.map((frameIndex) => loadFrame(frameIndex)));
       }
     }
 
-    function scheduleAutoIntroWhenBuffered() {
-      if (videoCanPlayThrough || getBufferedRatio() >= 0.55) {
-        scheduleAutoIntro();
-      }
-    }
-
-    function prepareVideo() {
-      video.muted = true;
-      video.playsInline = true;
-      video.preload = "auto";
-      video.src = HERO_VIDEO_PATH;
-
-      const handleLoadedMetadata = () => {
-        if (!mounted) return;
-        videoDuration =
-          Number.isFinite(video.duration) && video.duration > 0 ? video.duration : videoDuration;
-        requestVideoTime(targetProgress);
-        updateLoader();
-      };
-      const handleCanPlay = () => {
-        if (!mounted) return;
-        videoReady = true;
-        isSeeking = false;
-        scheduleAutoIntroWhenBuffered();
-        updateLoader();
-        drawFrame();
-      };
-      const handleCanPlayThrough = () => {
-        if (!mounted) return;
-        videoCanPlayThrough = true;
-        scheduleAutoIntro();
-        updateLoader();
-      };
-      const handleSeeked = () => {
-        if (!mounted) return;
-        isSeeking = false;
-        drawFrame();
-      };
-      const handleProgress = () => {
-        if (!mounted) return;
-        scheduleAutoIntroWhenBuffered();
-        updateLoader();
-      };
-      const handleError = () => {
-        if (!mounted) return;
-        videoReady = false;
-        isSeeking = false;
-        hero.style.setProperty("--cinematic-loader-opacity", "0");
-        drawFrame();
-      };
-
-      video.addEventListener("loadedmetadata", handleLoadedMetadata);
-      video.addEventListener("loadeddata", handleCanPlay);
-      video.addEventListener("canplay", handleCanPlay);
-      video.addEventListener("canplaythrough", handleCanPlayThrough);
-      video.addEventListener("seeked", handleSeeked);
-      video.addEventListener("progress", handleProgress);
-      video.addEventListener("error", handleError);
-      video.load();
-
-      return () => {
-        video.removeEventListener("loadedmetadata", handleLoadedMetadata);
-        video.removeEventListener("loadeddata", handleCanPlay);
-        video.removeEventListener("canplay", handleCanPlay);
-        video.removeEventListener("canplaythrough", handleCanPlayThrough);
-        video.removeEventListener("seeked", handleSeeked);
-        video.removeEventListener("progress", handleProgress);
-        video.removeEventListener("error", handleError);
-      };
-    }
-
-    function render() {
+    function render(time: number) {
       if (!mounted) return;
 
       resizeCanvas();
 
       targetProgress = getScrollProgress();
-      currentProgress += (targetProgress - currentProgress) * 0.24;
+      targetFrame = Math.round(targetProgress * (FRAME_COUNT - 1));
+      currentFrame += (targetFrame - currentFrame) * 0.24;
 
-      requestVideoTime(currentProgress);
+      const frameToDraw = clamp(Math.round(currentFrame), 0, FRAME_COUNT - 1);
       const finalBlend = getFinalStillBlend(targetProgress);
+      requestFrameWindow(frameToDraw);
 
-      if (
-        !videoReady ||
-        Math.abs(video.currentTime - renderedVideoTime) > 0.03 ||
-        Math.abs(finalBlend - renderedFinalBlend) > 0.004
-      ) {
-        drawFrame();
+      if (frameToDraw !== renderedFrame || Math.abs(finalBlend - renderedFinalBlend) > 0.004) {
+        drawFrame(frameToDraw);
       }
 
       updateStory(targetProgress);
@@ -611,7 +565,7 @@ export function Hero() {
     const handleResize = () => {
       if (autoIntroState.scheduled && !canRunAutoIntro()) cancelAutoIntro();
       resizeCanvas();
-      drawFrame();
+      drawFrame(clamp(Math.round(currentFrame), 0, FRAME_COUNT - 1));
     };
     const handleScroll = () => {
       if (!autoIntroState.running && window.scrollY > autoIntroConfig.maxInitialScroll) {
@@ -631,15 +585,13 @@ export function Hero() {
     reducedMotionQuery.addEventListener?.("change", cancelAutoIntro);
 
     resizeCanvas();
-    const cleanupVideo = prepareVideo();
-    void Promise.all([loadPoster(), loadFinalStill()]);
-    render();
+    void preloadFrames();
+    render(0);
 
     return () => {
       mounted = false;
       cancelAutoIntro();
       cancelAnimationFrame(rafId);
-      cleanupVideo();
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("wheel", cancelAutoIntro);
       window.removeEventListener("touchstart", cancelAutoIntro);
@@ -658,15 +610,6 @@ export function Hero() {
       aria-label="AINZA cinematic launch story"
     >
       <div className="cinematic-sticky">
-        <video
-          ref={videoRef}
-          className="cinematic-video-source"
-          muted
-          playsInline
-          preload="auto"
-          poster={HERO_POSTER_PATH}
-          aria-hidden="true"
-        />
         <canvas ref={canvasRef} className="cinematic-canvas" width={1280} height={720} />
         <div className="cinematic-story-layer" aria-live="off">
           <section
