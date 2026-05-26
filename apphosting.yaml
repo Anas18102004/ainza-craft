@@ -14,3 +14,7 @@ env:
     value: ainza-web-1367
     availability:
       - RUNTIME
+  - variable: NG_ALLOWED_HOSTS
+    value: ainza.web.app,ainza-craft--ainza-web-1367.asia-east1.hosted.app,ainza-craft-kihxoa74ca-de.a.run.app
+    availability:
+      - RUNTIME
