@@ -21,7 +21,7 @@ export function AboutPreview() {
             A technology partner built for businesses that want more than delivery.
           </h2>
           <p className="mt-5 text-[15px] leading-relaxed text-muted-foreground">
-            Founded by <span className="text-foreground">Hamza Meman</span> and co-founded by{" "}
+            Founded by <span className="text-foreground">Hamza Memon</span> and co-founded by{" "}
             <span className="text-foreground">Mohammad Anas</span>, AINZA combines strategy,
             engineering, design, and long-term support to help businesses build technology they can
             depend on.
@@ -30,7 +30,7 @@ export function AboutPreview() {
           <ul className="mt-6 space-y-2 text-[13.5px] text-muted-foreground">
             <li className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-violet" />
-              Founded by Hamza Meman
+              Founded by Hamza Memon
             </li>
             <li className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-blue" />
@@ -68,9 +68,9 @@ export function AboutPreview() {
             <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-2xl glass px-4 py-3">
               <div>
                 <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-                  Leadership
+                  Inside AINZA
                 </p>
-                <p className="text-sm font-medium">Hamza Meman · Mohammad Anas</p>
+                <p className="text-sm font-medium">Hamza Memon · Mohammad Anas</p>
               </div>
               <span className="hidden text-[11px] font-mono uppercase tracking-[0.2em] text-dim sm:inline">
                 est. AINZA

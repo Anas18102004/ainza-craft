@@ -8,7 +8,7 @@ export const Route = createFileRoute("/about")({
       {
         name: "description",
         content:
-          "Founded by Hamza Meman and co-founded by Mohammad Anas, AINZA is a long-term technology partner.",
+          "Founded by Hamza Memon and co-founded by Mohammad Anas, AINZA is a long-term technology partner.",
       },
       { property: "og:title", content: "About — AINZA" },
       {
@@ -21,7 +21,7 @@ export const Route = createFileRoute("/about")({
     <StubPage
       eyebrow="About AINZA"
       title="A technology partner built for businesses that want more than delivery."
-      blurb="Founded by Hamza Meman and co-founded by Mohammad Anas. The full About page is on its way."
+      blurb="Founded by Hamza Memon and co-founded by Mohammad Anas. The full About page is on its way."
     />
   ),
 });
