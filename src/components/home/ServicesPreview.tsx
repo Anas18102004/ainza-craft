@@ -4,7 +4,7 @@ import { ArrowUpRight } from "lucide-react";
 import { motion, useReducedMotion } from "motion/react";
 import { Reveal } from "@/components/site/Reveal";
 import { ServiceIconVisual, type ServiceVisualId } from "@/components/site/ServiceIconVisual";
-import servicesCommandCenter from "@/assets/generated/services-command-center.jpg";
+import servicesArchitecture from "@/assets/generated/services-architecture.jpg";
 
 type Service = {
   id: string;
@@ -22,7 +22,7 @@ const SERVICES: Service[] = [
     title: "AI Systems & Automation",
     desc: "Intelligent tools and workflow automation designed around real business operations.",
     visual: "ai",
-    spot: { x: 19, y: 32 },
+    spot: { x: 22, y: 26 },
   },
   {
     id: "cyber",
@@ -30,7 +30,7 @@ const SERVICES: Service[] = [
     title: "Cybersecurity",
     desc: "Security-first systems built to protect data, users, and long-term reliability.",
     visual: "cyber",
-    spot: { x: 41, y: 22 },
+    spot: { x: 50, y: 16 },
   },
   {
     id: "apps",
@@ -38,7 +38,7 @@ const SERVICES: Service[] = [
     title: "Web & Mobile Development",
     desc: "Modern applications designed for performance, usability, and scale.",
     visual: "apps",
-    spot: { x: 69, y: 24 },
+    spot: { x: 80, y: 25 },
   },
   {
     id: "platform",
@@ -46,7 +46,7 @@ const SERVICES: Service[] = [
     title: "Digital Platforms",
     desc: "Scalable platforms that connect operations, customers, and growth.",
     visual: "platform",
-    spot: { x: 83, y: 42 },
+    spot: { x: 86, y: 56 },
   },
   {
     id: "cloud",
@@ -54,7 +54,7 @@ const SERVICES: Service[] = [
     title: "Cloud & DevOps",
     desc: "Reliable infrastructure, deployment, monitoring, and continuous improvement.",
     visual: "cloud",
-    spot: { x: 69, y: 69 },
+    spot: { x: 60, y: 80 },
   },
   {
     id: "strategy",
@@ -62,7 +62,7 @@ const SERVICES: Service[] = [
     title: "Strategy & Consulting",
     desc: "Clear technology planning before development begins.",
     visual: "strategy",
-    spot: { x: 31, y: 70 },
+    spot: { x: 20, y: 76 },
   },
 ];
 
@@ -97,13 +97,13 @@ export function ServicesPreview() {
           <Reveal>
             <div className="service-command-panel relative aspect-[5/5] overflow-hidden rounded-3xl border border-white/10 bg-black/40 md:aspect-[6/5]">
               <img
-                src={servicesCommandCenter}
+                src={servicesArchitecture}
                 alt="AINZA service operations console visualization"
                 loading="lazy"
-                className="absolute inset-0 h-full w-full object-cover opacity-90"
+                className="absolute inset-0 h-full w-full object-cover opacity-95"
               />
               {/* deep overlay for depth + readability */}
-              <div className="absolute inset-0 bg-gradient-to-br from-background/40 via-transparent to-background/70" />
+              <div className="absolute inset-0 bg-gradient-to-br from-background/20 via-transparent to-background/60" />
 
               {/* module dots */}
               {SERVICES.map((s) => {

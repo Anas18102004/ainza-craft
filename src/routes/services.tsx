@@ -3,7 +3,21 @@ import { Link } from "@tanstack/react-router";
 import { ArrowRight, Check } from "lucide-react";
 import { Reveal } from "@/components/site/Reveal";
 import { ServiceIconVisual, type ServiceVisualId } from "@/components/site/ServiceIconVisual";
-import servicesCommandCenter from "@/assets/generated/services-command-center.jpg";
+import imgAi from "@/assets/generated/service-ai.jpg";
+import imgCyber from "@/assets/generated/service-cyber.jpg";
+import imgApps from "@/assets/generated/service-apps.jpg";
+import imgPlatform from "@/assets/generated/service-platform.jpg";
+import imgCloud from "@/assets/generated/service-cloud.jpg";
+import imgStrategy from "@/assets/generated/service-strategy.jpg";
+
+const SERVICE_IMAGES: Record<string, string> = {
+  ai: imgAi,
+  cyber: imgCyber,
+  apps: imgApps,
+  platform: imgPlatform,
+  cloud: imgCloud,
+  strategy: imgStrategy,
+};
 
 export const Route = createFileRoute("/services")({
   head: () => ({
@@ -192,7 +206,7 @@ function ServicesPage() {
               <article id={s.id} className="grid scroll-mt-32 gap-10 md:grid-cols-12 md:gap-12">
                 {/* Visual side */}
                 <div className={`md:col-span-5 ${i % 2 === 1 ? "md:order-2" : ""}`}>
-                  <ServiceVisual visual={s.visual} index={i} />
+                  <ServiceVisual visual={s.visual} index={i} image={SERVICE_IMAGES[s.visual]} />
                 </div>
 
                 {/* Content side */}
@@ -283,7 +297,15 @@ function PageHero({ eyebrow, title, blurb }: { eyebrow: string; title: string; b
   );
 }
 
-function ServiceVisual({ visual, index }: { visual: ServiceVisualId; index: number }) {
+function ServiceVisual({
+  visual,
+  index,
+  image,
+}: {
+  visual: ServiceVisualId;
+  index: number;
+  image?: string;
+}) {
   const variants = [
     "from-violet/30 via-blue/15 to-transparent",
     "from-cyan/25 via-blue/15 to-transparent",
@@ -297,44 +319,37 @@ function ServiceVisual({ visual, index }: { visual: ServiceVisualId; index: numb
       <div
         className={`pointer-events-none absolute -inset-10 -z-10 bg-gradient-to-br ${variants[index % 6]} blur-3xl`}
       />
-      <img
-        src={servicesCommandCenter}
-        alt=""
-        aria-hidden
-        className="absolute inset-0 -z-10 h-full w-full object-cover opacity-20"
-        loading="lazy"
-      />
-      <div className="absolute inset-0 -z-10 bg-grid opacity-[0.14]" />
+      {image && (
+        <img
+          src={image}
+          alt=""
+          aria-hidden
+          className="absolute inset-0 -z-10 h-full w-full object-cover opacity-90"
+          loading="lazy"
+        />
+      )}
+      <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-background/70 via-background/20 to-transparent" />
+      <div className="absolute inset-0 -z-10 bg-grid opacity-[0.10]" />
       <div className="flex aspect-[5/4] flex-col">
         <div className="flex items-center gap-2">
           <ServiceIconVisual
             id={visual}
             decorative
             platformVariant="dashboard"
-            className="h-16 w-16 shrink-0"
+            className="h-12 w-12 shrink-0"
           />
           <span className="font-mono text-[11px] uppercase tracking-[0.22em] text-dim">
             ainza.system / module {String(index + 1).padStart(2, "0")}
           </span>
         </div>
 
-        <div className="service-detail-map mt-6 grid flex-1 grid-cols-3 gap-2">
-          {Array.from({ length: 9 }).map((_, i) => (
-            <div
-              key={i}
-              className="rounded-lg border border-white/[0.08] bg-white/[0.035]"
-              style={{
-                opacity: 0.4 + ((i + index) % 5) * 0.12,
-              }}
-            />
-          ))}
-        </div>
+        <div className="flex-1" />
 
         <div className="mt-5 flex items-center justify-between">
-          <div className="h-1.5 w-2/3 overflow-hidden rounded-full bg-white/[0.08]">
+          <div className="h-1.5 w-2/3 overflow-hidden rounded-full bg-white/[0.12]">
             <div className="h-full w-2/3 rounded-full bg-gradient-to-r from-violet to-cyan" />
           </div>
-          <span className="font-mono text-[10px] text-dim">OK</span>
+          <span className="font-mono text-[10px] text-foreground/70">OK</span>
         </div>
       </div>
     </div>

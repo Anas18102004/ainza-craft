@@ -11,7 +11,8 @@ import {
 import { Reveal } from "@/components/site/Reveal";
 import { BrandWordmark } from "@/components/site/BrandWordmark";
 import { ServiceIconVisual } from "@/components/site/ServiceIconVisual";
-import aiOperationsPlatform from "@/assets/generated/ai-operations-platform.jpg";
+import aiSystemsHero from "@/assets/generated/ai-systems-hero.jpg";
+import aiUsecaseDocs from "@/assets/generated/ai-usecase-docs.jpg";
 
 export const Route = createFileRoute("/ai-systems")({
   head: () => ({
@@ -145,7 +146,7 @@ function AiSystemsPage() {
 
           <div className="ai-os-hero-visual animated-border min-w-0">
             <img
-              src={aiOperationsPlatform}
+              src={aiSystemsHero}
               alt="AINZA AI operations platform map with inputs, retrieval, reasoning, actions, governance, and monitoring"
               className="ai-os-hero-image"
               loading="eager"
@@ -192,6 +193,25 @@ function AiSystemsPage() {
             </div>
           </Reveal>
           <div className="grid gap-4 md:grid-cols-2">
+            <Reveal>
+              <article className="ai-os-card spotlight-card relative h-full overflow-hidden p-0 md:col-span-2">
+                <img
+                  src={aiUsecaseDocs}
+                  alt="Document intelligence visualization — translucent pages with AI-extracted structured data"
+                  loading="lazy"
+                  className="h-64 w-full object-cover md:h-72"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+                <div className="absolute bottom-0 left-0 right-0 p-6">
+                  <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-dim">
+                    pattern in production
+                  </p>
+                  <h3 className="mt-2 font-display text-[20px] font-semibold">
+                    Document understanding, with citations
+                  </h3>
+                </div>
+              </article>
+            </Reveal>
             {USE_CASES.map((u, i) => (
               <Reveal key={u.title} delay={i * 0.05}>
                 <article className="ai-os-card spotlight-card h-full">
