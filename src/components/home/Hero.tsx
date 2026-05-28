@@ -2,12 +2,55 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 
 const FRAME_COUNT = 721;
-const SOURCE_WIDTH = 1920;
-const SOURCE_HEIGHT = 1080;
-const FINAL_STILL_PATH = "/cinematic/5TH.png";
 
-const framePath = (index: number) =>
-  `/cinematic/ainza-framed-1080/frame_${String(index + 1).padStart(4, "0")}.jpg`;
+const FRAME_VARIANTS = {
+  mobile: {
+    name: "mobile",
+    directory: "ainza-framed-540",
+    width: 960,
+    height: 540,
+    finalStillPath: "/cinematic/5TH-540.jpg",
+    maxCache: 72,
+    maxConcurrent: 4,
+    windowRadius: 22,
+    targetRadius: 40,
+  },
+  default: {
+    name: "default",
+    directory: "ainza-framed-720",
+    width: 1280,
+    height: 720,
+    finalStillPath: "/cinematic/5TH-720.jpg",
+    maxCache: 64,
+    maxConcurrent: 4,
+    windowRadius: 20,
+    targetRadius: 36,
+  },
+  full: {
+    name: "full",
+    directory: "ainza-framed-1080",
+    width: 1920,
+    height: 1080,
+    finalStillPath: "/cinematic/5TH.png",
+    maxCache: 36,
+    maxConcurrent: 3,
+    windowRadius: 16,
+    targetRadius: 28,
+  },
+} as const;
+
+type FrameVariant = (typeof FRAME_VARIANTS)[keyof typeof FRAME_VARIANTS];
+
+type DecodedFrame = {
+  index: number;
+  source: CanvasImageSource;
+  width: number;
+  height: number;
+  close?: () => void;
+};
+
+const framePath = (index: number, variant: FrameVariant) =>
+  `/cinematic/${variant.directory}/frame_${String(index + 1).padStart(4, "0")}.jpg`;
 
 type StoryCopy = {
   element: HTMLElement;
@@ -36,12 +79,20 @@ export function Hero() {
       end: Number(element.dataset.end ?? 1),
     }));
 
-    const frames: Array<HTMLImageElement | null | undefined> = new Array(FRAME_COUNT);
-    const requestedFrames = new Set<number>();
-    let finalStillImage: HTMLImageElement | null = null;
+    let activeVariant = selectFrameVariant();
+    let frameCache = new Map<number, DecodedFrame>();
+    let queuedFrames = new Map<number, number>();
+    let loadingFrames = new Set<number>();
+    let failedFrames = new Set<number>();
+    let frameControllers = new Map<number, AbortController>();
+    let criticalFrames = new Set<number>();
+    let completedCriticalFrames = new Set<number>();
+    let openingCriticalFrames = new Set<number>();
+    let completedOpeningFrames = new Set<number>();
+    let finalStillImage: DecodedFrame | null = null;
     let finalStillReady = false;
-    let finalStillRequested = false;
-    let loadedFrames = 0;
+    let finalStillDone = false;
+    let finalStillController: AbortController | null = null;
     let currentFrame = 0;
     let targetFrame = 0;
     let targetProgress = 0;
@@ -96,6 +147,29 @@ export function Hero() {
       return [...new Set(items)].filter((index) => index >= 0 && index < FRAME_COUNT);
     }
 
+    function selectFrameVariant(): FrameVariant {
+      const nav = window.navigator as Navigator & {
+        connection?: { saveData?: boolean; effectiveType?: string };
+        deviceMemory?: number;
+      };
+      const saveData = Boolean(nav.connection?.saveData);
+      const lowMemory = typeof nav.deviceMemory === "number" && nav.deviceMemory <= 4;
+      const slowConnection = /(^|-)2g$/.test(nav.connection?.effectiveType ?? "");
+      const viewport = Math.max(window.innerWidth, window.innerHeight);
+      const narrowViewport = Math.min(window.innerWidth, window.innerHeight) <= 760;
+      const dpr = window.devicePixelRatio || 1;
+
+      if (saveData || slowConnection || lowMemory || narrowViewport) {
+        return FRAME_VARIANTS.mobile;
+      }
+
+      if (viewport >= 1680 && dpr <= 1.5 && (nav.deviceMemory ?? 8) >= 8) {
+        return FRAME_VARIANTS.full;
+      }
+
+      return FRAME_VARIANTS.default;
+    }
+
     function smootherstep(value: number) {
       const x = clamp(value);
       return x * x * x * (x * (x * 6 - 15) + 10);
@@ -124,59 +198,118 @@ export function Hero() {
       renderedFinalBlend = -1;
     }
 
-    function nearestLoadedFrameIndex(index: number) {
-      if (frames[index]?.complete) return index;
+    function closeFrame(frame: DecodedFrame | null) {
+      try {
+        frame?.close?.();
+      } catch {
+        // Some browsers can throw if an ImageBitmap has already been closed.
+      }
+    }
 
-      for (let distance = 1; distance < FRAME_COUNT; distance += 1) {
+    function clearDecodedFrames() {
+      for (const controller of frameControllers.values()) {
+        controller.abort();
+      }
+      finalStillController?.abort();
+
+      for (const frame of frameCache.values()) {
+        closeFrame(frame);
+      }
+      closeFrame(finalStillImage);
+
+      frameCache = new Map();
+      queuedFrames = new Map();
+      loadingFrames = new Set();
+      failedFrames = new Set();
+      frameControllers = new Map();
+      criticalFrames = new Set();
+      completedCriticalFrames = new Set();
+      openingCriticalFrames = new Set();
+      completedOpeningFrames = new Set();
+      finalStillImage = null;
+      finalStillReady = false;
+      finalStillDone = false;
+      finalStillController = null;
+      renderedFrame = -1;
+      renderedFinalBlend = -1;
+    }
+
+    function touchFrame(index: number) {
+      const frame = frameCache.get(index);
+      if (!frame) return;
+      frameCache.delete(index);
+      frameCache.set(index, frame);
+    }
+
+    function evictFrames() {
+      const protectedFrames = new Set<number>([
+        0,
+        targetFrame,
+        clamp(Math.round(currentFrame), 0, FRAME_COUNT - 1),
+      ]);
+      if (renderedFrame >= 0) protectedFrames.add(renderedFrame);
+
+      while (frameCache.size > activeVariant.maxCache) {
+        let evicted = false;
+        for (const [index, frame] of frameCache) {
+          if (protectedFrames.has(index)) continue;
+          frameCache.delete(index);
+          closeFrame(frame);
+          evicted = true;
+          break;
+        }
+
+        if (!evicted) {
+          const first = frameCache.entries().next().value as [number, DecodedFrame] | undefined;
+          if (!first) return;
+          frameCache.delete(first[0]);
+          closeFrame(first[1]);
+        }
+      }
+    }
+
+    function nearestCachedFrameIndex(index: number) {
+      if (frameCache.has(index)) return index;
+
+      for (let distance = 1; distance <= activeVariant.targetRadius; distance += 1) {
         const previous = index - distance;
         const next = index + distance;
 
-        if (previous >= 0 && frames[previous]?.complete) return previous;
-        if (next < FRAME_COUNT && frames[next]?.complete) return next;
+        if (previous >= 0 && frameCache.has(previous)) return previous;
+        if (next < FRAME_COUNT && frameCache.has(next)) return next;
       }
 
-      return -1;
+      if (renderedFrame >= 0 && frameCache.has(renderedFrame)) {
+        return renderedFrame;
+      }
+
+      let nearest = -1;
+      let nearestDistance = Number.POSITIVE_INFINITY;
+      for (const frameIndex of frameCache.keys()) {
+        const distance = Math.abs(frameIndex - index);
+        if (distance < nearestDistance) {
+          nearest = frameIndex;
+          nearestDistance = distance;
+        }
+      }
+
+      return nearest;
     }
 
     function drawBackground() {
       context.fillStyle = "#05050f";
       context.fillRect(0, 0, cssWidth, cssHeight);
-
-      const gradient = context.createLinearGradient(0, 0, 0, cssHeight);
-      gradient.addColorStop(0, "#0e0e28");
-      gradient.addColorStop(0.15, "#0a0a1e");
-      gradient.addColorStop(0.5, "#05050f");
-      gradient.addColorStop(1, "#03030a");
-      context.fillStyle = gradient;
-      context.fillRect(0, 0, cssWidth, cssHeight);
-
-      context.save();
-      const topGlow = context.createRadialGradient(
-        cssWidth * 0.5,
-        0,
-        0,
-        cssWidth * 0.5,
-        0,
-        cssWidth * 0.45,
-      );
-      topGlow.addColorStop(0, "rgba(100, 80, 180, 0.12)");
-      topGlow.addColorStop(0.4, "rgba(60, 50, 140, 0.06)");
-      topGlow.addColorStop(1, "rgba(0, 0, 0, 0)");
-      context.fillStyle = topGlow;
-      context.fillRect(0, 0, cssWidth, cssHeight * 0.3);
-      context.restore();
     }
 
-    function getDrawLayout(image: HTMLImageElement) {
-      const naturalWidth = image.naturalWidth || SOURCE_WIDTH;
-      const naturalHeight = image.naturalHeight || SOURCE_HEIGHT;
+    function getDrawLayout(frame: DecodedFrame) {
+      const naturalWidth = frame.width || activeVariant.width;
+      const naturalHeight = frame.height || activeVariant.height;
       const headerSafe = cssWidth <= 980 ? 82 : 92;
       const stageHeight = Math.max(360, cssHeight - headerSafe);
       const sourceRatio = naturalWidth / naturalHeight;
       const stageRatio = cssWidth / stageHeight;
       const containScale = Math.min(cssWidth / naturalWidth, stageHeight / naturalHeight);
       const coverScale = Math.max(cssWidth / naturalWidth, stageHeight / naturalHeight);
-      const edgeScale = Math.max(cssWidth / naturalWidth, cssHeight / naturalHeight);
       const cinematicInset = cssWidth > 1180;
       const shortWideViewport = cssWidth > 1200 && stageRatio > sourceRatio + 0.1;
       const scale = cinematicInset ? Math.min(coverScale, containScale * 1.24) : coverScale;
@@ -187,23 +320,12 @@ export function Hero() {
         drawHeight > stageHeight
           ? headerSafe
           : Math.round(headerSafe + (stageHeight - drawHeight) / 2);
-      const backdropWidth = Math.round(naturalWidth * coverScale);
-      const backdropHeight = Math.round(naturalHeight * coverScale);
-      const backdropX = Math.round((cssWidth - backdropWidth) / 2);
-      const backdropY =
-        backdropHeight > stageHeight
-          ? headerSafe
-          : Math.round(headerSafe + (stageHeight - backdropHeight) / 2);
-      const edgeWidth = Math.round(naturalWidth * edgeScale);
-      const edgeHeight = Math.round(naturalHeight * edgeScale);
-      const edgeX = Math.round((cssWidth - edgeWidth) / 2);
-      const edgeY = Math.round((cssHeight - edgeHeight) / 2);
 
       return {
-        main: { x, y, width: drawWidth, height: drawHeight },
-        backdrop: { x: backdropX, y: backdropY, width: backdropWidth, height: backdropHeight },
-        edge: { x: edgeX, y: edgeY, width: edgeWidth, height: edgeHeight },
-        fillBackdrop: shortWideViewport || cinematicInset,
+        x,
+        y,
+        width: shortWideViewport ? Math.max(drawWidth, cssWidth) : drawWidth,
+        height: drawHeight,
       };
     }
 
@@ -214,110 +336,28 @@ export function Hero() {
       );
     }
 
-    function drawCinematicImage(image: HTMLImageElement | null, alpha = 1) {
-      if (!image) return;
-
-      const { main, backdrop, edge, fillBackdrop } = getDrawLayout(image);
-      const spillWidth = Math.round(Math.min(80, Math.max(40, cssWidth * 0.045)));
-      const leftSpillEnd = Math.max(0, Math.min(main.x + spillWidth, cssWidth * 0.36));
-      const leftFeatherStart = Math.max(0, main.x - Math.round(spillWidth * 0.55));
-      const leftFeatherEnd = Math.min(cssWidth, main.x + Math.round(spillWidth * 0.72));
-      const rightEdge = main.x + main.width;
-      const rightSpillStart = Math.min(cssWidth, Math.max(rightEdge - spillWidth, cssWidth * 0.64));
-      const rightFeatherStart = Math.max(0, rightEdge - Math.round(spillWidth * 0.72));
-      const rightFeatherEnd = Math.min(cssWidth, rightEdge + Math.round(spillWidth * 0.55));
-
-      context.save();
-      context.globalAlpha = alpha * (fillBackdrop ? 0.28 : 0.38);
-      context.drawImage(image, edge.x, edge.y, edge.width, edge.height);
-      context.fillStyle = "rgba(5, 5, 17, 0.04)";
-      context.fillRect(0, 0, cssWidth, cssHeight);
-      context.restore();
-
-      if (main.x > 0 && leftSpillEnd > 0) {
-        context.save();
-        context.beginPath();
-        context.rect(0, 0, leftSpillEnd, cssHeight);
-        context.clip();
-        context.globalAlpha = alpha * 0.32;
-        context.drawImage(image, backdrop.x, backdrop.y, backdrop.width, backdrop.height);
-        const spillMask = context.createLinearGradient(0, 0, leftSpillEnd, 0);
-        spillMask.addColorStop(0, "rgba(5, 5, 17, 0.03)");
-        spillMask.addColorStop(0.5, "rgba(5, 5, 17, 0.01)");
-        spillMask.addColorStop(1, "rgba(5, 5, 17, 0)");
-        context.globalAlpha = alpha;
-        context.fillStyle = spillMask;
-        context.fillRect(0, 0, leftSpillEnd, cssHeight);
-        context.restore();
-      }
-
-      if (rightEdge < cssWidth) {
-        context.save();
-        context.beginPath();
-        context.rect(rightSpillStart, 0, cssWidth - rightSpillStart, cssHeight);
-        context.clip();
-        context.globalAlpha = alpha * 0.32;
-        context.drawImage(image, backdrop.x, backdrop.y, backdrop.width, backdrop.height);
-        const rightSpillMask = context.createLinearGradient(rightSpillStart, 0, cssWidth, 0);
-        rightSpillMask.addColorStop(0, "rgba(5, 5, 17, 0)");
-        rightSpillMask.addColorStop(0.5, "rgba(5, 5, 17, 0.01)");
-        rightSpillMask.addColorStop(1, "rgba(5, 5, 17, 0.03)");
-        context.globalAlpha = alpha;
-        context.fillStyle = rightSpillMask;
-        context.fillRect(rightSpillStart, 0, cssWidth - rightSpillStart, cssHeight);
-        context.restore();
-      }
-
-      if (fillBackdrop) {
-        context.save();
-        context.globalAlpha = alpha * 0.14;
-        context.drawImage(image, backdrop.x, backdrop.y, backdrop.width, backdrop.height);
-        context.fillStyle = "rgba(5, 5, 15, 0.02)";
-        context.fillRect(0, 0, cssWidth, cssHeight);
-        context.restore();
-      }
-
+    function drawCinematicImage(frame: DecodedFrame | null, alpha = 1) {
+      if (!frame) return;
+      const layout = getDrawLayout(frame);
       context.save();
       context.globalAlpha = alpha;
-      context.drawImage(image, main.x, main.y, main.width, main.height);
+      context.drawImage(frame.source, layout.x, layout.y, layout.width, layout.height);
       context.restore();
-
-      if (main.x > 0 && leftFeatherEnd > leftFeatherStart) {
-        context.save();
-        const feather = context.createLinearGradient(leftFeatherStart, 0, leftFeatherEnd, 0);
-        feather.addColorStop(0, "rgba(5, 5, 17, 0)");
-        feather.addColorStop(0.38, "rgba(5, 5, 17, 0.025)");
-        feather.addColorStop(0.58, "rgba(5, 5, 17, 0.01)");
-        feather.addColorStop(1, "rgba(5, 5, 17, 0)");
-        context.globalAlpha = alpha;
-        context.fillStyle = feather;
-        context.fillRect(leftFeatherStart, 0, leftFeatherEnd - leftFeatherStart, cssHeight);
-        context.restore();
-      }
-
-      if (rightEdge < cssWidth && rightFeatherEnd > rightFeatherStart) {
-        context.save();
-        const rightFeather = context.createLinearGradient(rightFeatherStart, 0, rightFeatherEnd, 0);
-        rightFeather.addColorStop(0, "rgba(5, 5, 17, 0)");
-        rightFeather.addColorStop(0.42, "rgba(5, 5, 17, 0.01)");
-        rightFeather.addColorStop(0.62, "rgba(5, 5, 17, 0.025)");
-        rightFeather.addColorStop(1, "rgba(5, 5, 17, 0)");
-        context.globalAlpha = alpha;
-        context.fillStyle = rightFeather;
-        context.fillRect(rightFeatherStart, 0, rightFeatherEnd - rightFeatherStart, cssHeight);
-        context.restore();
-      }
     }
 
     function drawFrame(index: number) {
-      const frameIndex = nearestLoadedFrameIndex(index);
-      if (frameIndex === -1) return;
+      const frameIndex = nearestCachedFrameIndex(index);
+      if (frameIndex === -1) {
+        drawBackground();
+        return;
+      }
 
-      const image = frames[frameIndex];
+      const frame = frameCache.get(frameIndex) ?? null;
       const finalBlend = getFinalStillBlend(targetProgress);
 
+      touchFrame(frameIndex);
       drawBackground();
-      drawCinematicImage(image ?? null);
+      drawCinematicImage(frame);
 
       if (finalBlend > 0) {
         drawCinematicImage(finalStillImage, finalBlend);
@@ -353,11 +393,13 @@ export function Hero() {
     }
 
     function updateLoader() {
-      const progress = Math.round((loadedFrames / FRAME_COUNT) * 100);
+      const total = Math.max(1, criticalFrames.size + 1);
+      const loaded = completedCriticalFrames.size + (finalStillDone ? 1 : 0);
+      const progress = Math.round((loaded / total) * 100);
       hero.style.setProperty("--cinematic-load-progress", `${progress}%`);
       if (loaderTextRef.current) {
         loaderTextRef.current.textContent =
-          progress < 100 ? `Loading sequence ${progress}%` : "Sequence ready";
+          progress < 100 ? `Preparing sequence ${progress}%` : "Sequence ready";
       }
       if (progress === 100) {
         window.setTimeout(() => {
@@ -374,6 +416,7 @@ export function Hero() {
 
     function canRunAutoIntro() {
       return (
+        completedOpeningFrames.size >= openingCriticalFrames.size &&
         !autoIntroState.used &&
         !autoIntroState.cancelled &&
         !window.location.hash &&
@@ -444,115 +487,202 @@ export function Hero() {
       autoIntroState.timeoutId = window.setTimeout(runAutoIntro, autoIntroConfig.delay);
     }
 
-    function loadFrame(index: number, priority = "auto") {
-      if (requestedFrames.has(index)) return Promise.resolve(frames[index] ?? null);
-      requestedFrames.add(index);
+    function markFrameDone(index: number) {
+      if (criticalFrames.has(index)) completedCriticalFrames.add(index);
+      if (openingCriticalFrames.has(index)) completedOpeningFrames.add(index);
+      updateLoader();
+      scheduleAutoIntro();
+    }
 
-      return new Promise<HTMLImageElement | null>((resolve) => {
+    async function decodeImage(url: string, index: number, signal: AbortSignal) {
+      const response = await fetch(url, { cache: "force-cache", signal });
+      if (!response.ok) throw new Error(`Unable to load cinematic frame ${index}`);
+
+      const blob = await response.blob();
+      if ("createImageBitmap" in window) {
+        const bitmap = await createImageBitmap(blob);
+        return {
+          index,
+          source: bitmap,
+          width: bitmap.width,
+          height: bitmap.height,
+          close: () => bitmap.close(),
+        };
+      }
+
+      return await new Promise<DecodedFrame>((resolve, reject) => {
+        const objectUrl = URL.createObjectURL(blob);
         const image = new Image();
         image.decoding = "async";
-        if (priority === "eager") image.loading = "eager";
         image.onload = () => {
-          if (!mounted) {
-            resolve(null);
-            return;
-          }
-          loadedFrames += 1;
-          frames[index] = image;
-          if (index === 0 || Math.abs(index - targetFrame) <= 3) {
-            drawFrame(targetFrame);
-          }
-          if (index === 0) {
-            scheduleAutoIntro();
-          }
-          updateLoader();
-          resolve(image);
+          URL.revokeObjectURL(objectUrl);
+          resolve({
+            index,
+            source: image,
+            width: image.naturalWidth || activeVariant.width,
+            height: image.naturalHeight || activeVariant.height,
+          });
         };
         image.onerror = () => {
-          if (mounted) {
-            loadedFrames += 1;
-            updateLoader();
-          }
-          resolve(null);
+          URL.revokeObjectURL(objectUrl);
+          reject(new Error(`Unable to decode cinematic frame ${index}`));
         };
-        image.src = framePath(index);
+        image.src = objectUrl;
       });
     }
 
-    function loadFinalStill(priority = "auto") {
-      if (finalStillRequested) return Promise.resolve(finalStillImage);
-      finalStillRequested = true;
+    function enqueueFrame(index: number, priority: number) {
+      if (index < 0 || index >= FRAME_COUNT) return;
+      if (frameCache.has(index) || loadingFrames.has(index) || failedFrames.has(index)) return;
 
-      return new Promise<HTMLImageElement | null>((resolve) => {
-        const image = new Image();
-        image.decoding = "async";
-        if (priority === "eager") image.loading = "eager";
-        image.onload = () => {
-          if (!mounted) {
-            resolve(null);
-            return;
-          }
-          finalStillImage = image;
-          finalStillReady = true;
-          renderedFrame = -1;
-          renderedFinalBlend = -1;
-          drawFrame(clamp(Math.round(currentFrame), 0, FRAME_COUNT - 1));
-          resolve(image);
-        };
-        image.onerror = () => {
-          finalStillReady = false;
-          resolve(null);
-        };
-        image.src = FINAL_STILL_PATH;
-      });
+      const existingPriority = queuedFrames.get(index);
+      if (existingPriority === undefined || priority < existingPriority) {
+        queuedFrames.set(index, priority);
+      }
+
+      pumpFrameQueue();
     }
 
-    function requestFrameWindow(center: number, radius = 14) {
+    function pruneFrameQueue(center: number) {
+      const keepDistance = activeVariant.windowRadius * 5;
+      for (const index of queuedFrames.keys()) {
+        if (criticalFrames.has(index)) continue;
+        if (Math.abs(index - center) > keepDistance) queuedFrames.delete(index);
+      }
+    }
+
+    function pumpFrameQueue() {
+      if (!mounted) return;
+
+      while (loadingFrames.size < activeVariant.maxConcurrent && queuedFrames.size > 0) {
+        const next = [...queuedFrames.entries()].sort((a, b) => a[1] - b[1])[0];
+        if (!next) return;
+
+        const [index] = next;
+        const variantForRequest = activeVariant;
+        const controller = new AbortController();
+
+        queuedFrames.delete(index);
+        loadingFrames.add(index);
+        frameControllers.set(index, controller);
+
+        decodeImage(framePath(index, variantForRequest), index, controller.signal)
+          .then((frame) => {
+            if (!mounted || activeVariant.name !== variantForRequest.name) {
+              closeFrame(frame);
+              return;
+            }
+
+            frameCache.set(index, frame);
+            touchFrame(index);
+            evictFrames();
+            markFrameDone(index);
+
+            if (index === 0 || Math.abs(index - targetFrame) <= activeVariant.targetRadius) {
+              drawFrame(targetFrame);
+            }
+          })
+          .catch((error) => {
+            if (!mounted || activeVariant.name !== variantForRequest.name) return;
+            if (!(error instanceof DOMException && error.name === "AbortError")) {
+              failedFrames.add(index);
+              markFrameDone(index);
+            }
+          })
+          .finally(() => {
+            loadingFrames.delete(index);
+            frameControllers.delete(index);
+            pumpFrameQueue();
+          });
+      }
+    }
+
+    function requestFrameWindow(
+      center: number,
+      radius = activeVariant.windowRadius,
+      priority = 20,
+    ) {
       const indexes = [];
       for (let offset = -radius; offset <= radius; offset += 1) {
         indexes.push(center + offset);
       }
       unique(indexes).forEach((index) => {
-        void loadFrame(index);
+        enqueueFrame(index, priority + Math.abs(index - center));
       });
     }
 
-    async function preloadFrames() {
-      const keyFrames = unique([0, 108, 216, 360, 504, 648, 720]);
-      const openingFrames = unique(Array.from({ length: 42 }, (_, index) => index));
-      const priorityFrames = unique([...keyFrames, ...openingFrames]);
-      const finalStillPromise = loadFinalStill("eager");
+    function loadFinalStill() {
+      finalStillController?.abort();
+      finalStillController = new AbortController();
+      const variantForRequest = activeVariant;
 
-      await loadFrame(0, "eager");
-      await Promise.all([
-        finalStillPromise,
-        ...priorityFrames.filter((index) => index !== 0).map((index) => loadFrame(index, "eager")),
-      ]);
+      decodeImage(variantForRequest.finalStillPath, FRAME_COUNT, finalStillController.signal)
+        .then((frame) => {
+          if (!mounted || activeVariant.name !== variantForRequest.name) {
+            closeFrame(frame);
+            return;
+          }
 
-      const remaining = [];
-      for (let index = 0; index < FRAME_COUNT; index += 1) {
-        if (!requestedFrames.has(index)) remaining.push(index);
-      }
-
-      const batchSize = 8;
-      for (let index = 0; index < remaining.length && mounted; index += batchSize) {
-        const batch = remaining.slice(index, index + batchSize);
-        await Promise.all(batch.map((frameIndex) => loadFrame(frameIndex)));
-      }
+          finalStillImage = frame;
+          finalStillReady = true;
+          finalStillDone = true;
+          renderedFrame = -1;
+          renderedFinalBlend = -1;
+          updateLoader();
+          drawFrame(clamp(Math.round(currentFrame), 0, FRAME_COUNT - 1));
+        })
+        .catch(() => {
+          if (!mounted || activeVariant.name !== variantForRequest.name) return;
+          finalStillReady = false;
+          finalStillDone = true;
+          updateLoader();
+        });
     }
 
-    function render(time: number) {
+    function preloadFrames() {
+      const keyFrames = unique([0, 108, 216, 360, 504, 648, 720]);
+      const openingFrames = unique(Array.from({ length: 42 }, (_, index) => index));
+      openingCriticalFrames = new Set(openingFrames);
+      criticalFrames = new Set(unique([...keyFrames, ...openingFrames]));
+      updateLoader();
+      loadFinalStill();
+
+      enqueueFrame(0, 0);
+      openingFrames.forEach((index) => enqueueFrame(index, 2 + index / 100));
+      keyFrames.forEach((index, order) => enqueueFrame(index, 8 + order));
+      requestFrameWindow(0, activeVariant.windowRadius, 14);
+    }
+
+    function switchVariant(nextVariant: FrameVariant) {
+      if (nextVariant.name === activeVariant.name) return;
+      activeVariant = nextVariant;
+      clearDecodedFrames();
+      drawBackground();
+      preloadFrames();
+    }
+
+    function render() {
       if (!mounted) return;
 
       resizeCanvas();
 
       targetProgress = getScrollProgress();
       targetFrame = Math.round(targetProgress * (FRAME_COUNT - 1));
-      currentFrame += (targetFrame - currentFrame) * 0.24;
+      currentFrame += (targetFrame - currentFrame) * 0.28;
 
       const frameToDraw = clamp(Math.round(currentFrame), 0, FRAME_COUNT - 1);
       const finalBlend = getFinalStillBlend(targetProgress);
-      requestFrameWindow(frameToDraw);
+      const direction = targetFrame >= currentFrame ? 1 : -1;
+      const predictedFrame = clamp(
+        frameToDraw + direction * activeVariant.windowRadius,
+        0,
+        FRAME_COUNT - 1,
+      );
+
+      enqueueFrame(targetFrame, 1);
+      requestFrameWindow(frameToDraw, activeVariant.windowRadius, 18);
+      requestFrameWindow(predictedFrame, Math.round(activeVariant.windowRadius * 0.7), 34);
+      pruneFrameQueue(targetFrame);
 
       if (frameToDraw !== renderedFrame || Math.abs(finalBlend - renderedFinalBlend) > 0.004) {
         drawFrame(frameToDraw);
@@ -564,6 +694,7 @@ export function Hero() {
 
     const handleResize = () => {
       if (autoIntroState.scheduled && !canRunAutoIntro()) cancelAutoIntro();
+      switchVariant(selectFrameVariant());
       resizeCanvas();
       drawFrame(clamp(Math.round(currentFrame), 0, FRAME_COUNT - 1));
     };
@@ -585,13 +716,15 @@ export function Hero() {
     reducedMotionQuery.addEventListener?.("change", cancelAutoIntro);
 
     resizeCanvas();
-    void preloadFrames();
-    render(0);
+    drawBackground();
+    preloadFrames();
+    render();
 
     return () => {
       mounted = false;
       cancelAutoIntro();
       cancelAnimationFrame(rafId);
+      clearDecodedFrames();
       window.removeEventListener("resize", handleResize);
       window.removeEventListener("wheel", cancelAutoIntro);
       window.removeEventListener("touchstart", cancelAutoIntro);

@@ -12,6 +12,7 @@
     "build:dev": "vite build --mode development",
     "build:firebase": "node scripts/build-firebase.mjs",
     "build:vercel": "node scripts/build-vercel.mjs",
+    "cinematic:generate": "node scripts/generate-cinematic-frames.mjs",
     "preview": "vite preview",
     "start": "npm run start:firebase",
     "start:firebase": "node scripts/firebase-server.mjs",
