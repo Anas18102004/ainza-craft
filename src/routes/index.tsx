@@ -11,9 +11,17 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "AINZA — Engineering intelligent systems for real business growth" },
-      { name: "description", content: "AI systems, cybersecurity, web & mobile, digital platforms, cloud & DevOps — built around real operations and supported long after launch." },
+      {
+        name: "description",
+        content:
+          "AI systems, cybersecurity, web & mobile, digital platforms, cloud & DevOps — built around real operations and supported long after launch.",
+      },
       { property: "og:title", content: "AINZA — Engineering intelligent systems" },
-      { property: "og:description", content: "Secure, intelligent, and scalable technology built around real business outcomes." },
+      {
+        property: "og:description",
+        content:
+          "Secure, intelligent, and scalable technology built around real business outcomes.",
+      },
     ],
   }),
   component: Index,

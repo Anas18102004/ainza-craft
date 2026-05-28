@@ -74,7 +74,6 @@
     --cinematic-load-progress: 0%;
     --cinematic-loader-opacity: 1;
     --cinematic-scroll-progress: 0;
-    --cinematic-final-opacity: 0;
     position: relative;
     height: 760vh;
     min-height: 5600px;
@@ -94,28 +93,13 @@
     isolation: isolate;
   }
 
-  .cinematic-video-source,
-  .cinematic-final-still {
+  .cinematic-canvas {
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     background: #050511;
-    object-fit: cover;
-    object-position: center center;
     transform: translateZ(0);
-  }
-
-  .cinematic-video-source {
-    z-index: 0;
-    display: block;
-  }
-
-  .cinematic-final-still {
-    z-index: 1;
-    opacity: var(--cinematic-final-opacity);
-    pointer-events: none;
-    transition: opacity 160ms linear;
   }
 
   .cinematic-sticky::before,

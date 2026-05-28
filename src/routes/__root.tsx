@@ -75,18 +75,44 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "AINZA — Engineering intelligent systems for real business growth" },
-      { name: "description", content: "AINZA designs, builds, and supports AI systems, secure platforms, and digital products built for long-term growth." },
+      {
+        name: "description",
+        content:
+          "AINZA designs, builds, and supports AI systems, secure platforms, and digital products built for long-term growth.",
+      },
       { name: "author", content: "AINZA" },
       { name: "theme-color", content: "#050511" },
-      { property: "og:title", content: "AINZA — Engineering intelligent systems for real business growth" },
-      { property: "og:description", content: "AINZA designs, builds, and supports AI systems, secure platforms, and digital products built for long-term growth." },
+      {
+        property: "og:title",
+        content: "AINZA — Engineering intelligent systems for real business growth",
+      },
+      {
+        property: "og:description",
+        content:
+          "AINZA designs, builds, and supports AI systems, secure platforms, and digital products built for long-term growth.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
       { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "AINZA — Engineering intelligent systems for real business growth" },
-      { name: "twitter:description", content: "AINZA designs, builds, and supports AI systems, secure platforms, and digital products built for long-term growth." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a0a17e61-c1d1-4665-b9c3-0da64c4a00e0/id-preview-211681c1--ac7301b3-5d46-4cba-906d-2ea0d9fcf32f.lovable.app-1779435588569.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a0a17e61-c1d1-4665-b9c3-0da64c4a00e0/id-preview-211681c1--ac7301b3-5d46-4cba-906d-2ea0d9fcf32f.lovable.app-1779435588569.png" },
+      {
+        name: "twitter:title",
+        content: "AINZA — Engineering intelligent systems for real business growth",
+      },
+      {
+        name: "twitter:description",
+        content:
+          "AINZA designs, builds, and supports AI systems, secure platforms, and digital products built for long-term growth.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a0a17e61-c1d1-4665-b9c3-0da64c4a00e0/id-preview-211681c1--ac7301b3-5d46-4cba-906d-2ea0d9fcf32f.lovable.app-1779435588569.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/a0a17e61-c1d1-4665-b9c3-0da64c4a00e0/id-preview-211681c1--ac7301b3-5d46-4cba-906d-2ea0d9fcf32f.lovable.app-1779435588569.png",
+      },
     ],
     links: [
       {
