@@ -68,7 +68,7 @@ export function AboutPreview() {
             <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between rounded-2xl glass px-4 py-3">
               <div>
                 <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-muted-foreground">
-                  Leadership
+                  Inside AINZA
                 </p>
                 <p className="text-sm font-medium">Hamza Memon · Mohammad Anas</p>
               </div>
