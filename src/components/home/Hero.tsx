@@ -1,4 +1,3 @@
-// @ts-nocheck
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 
